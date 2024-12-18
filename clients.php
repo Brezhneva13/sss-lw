@@ -1,3 +1,6 @@
+На основе предоставленной вами структуры таблицы clients, я обновлю код для страницы clients.php, чтобы он соответствовал вашей новой структуре данных. В этом примере я добавлю поля ClientNumber, Phone, Address, CardNumber, Name, Surname, Patronymic и BankNumber. Также учтем, что BankNumber является внешним ключом, ссылающимся на таблицу Bank.
+
+Обновленный код для clients.php
 <?php
 // Конфигурация базы данных
 $host = 'localhost'; // Обычно localhost
@@ -18,10 +21,17 @@ $conn->set_charset("utf8mb4");
 
 // Обработка добавления записи
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_client'])) {
+    $phone = $conn->real_escape_string($_POST['phone']);
+    $address = $conn->real_escape_string($_POST['address']);
+    $cardNumber = $conn->real_escape_string($_POST['card_number']);
     $name = $conn->real_escape_string($_POST['name']);
-    $email = $conn->real_escape_string($_POST['email']);
+    $surname = $conn->real_escape_string($_POST['surname']);
+    $patronymic = $conn->real_escape_string($_POST['patronymic']);
+    $bankNumber = (int)$_POST['bank_number'];
+
+    $sql = "INSERT INTO clients (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
+            VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', $bankNumber)";
     
-    $sql = "INSERT INTO clients (name, email) VALUES ('$name', '$email')";
     if ($conn->query($sql) === TRUE) {
         echo "Запись успешно добавлена.";
     } else {
@@ -31,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_client'])) {
 
 // Обработка удаления записи
 if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    $sql = "DELETE FROM clients WHERE id = $id";
+    $clientNumber = (int)$_GET['delete'];
+    $sql = "DELETE FROM clients WHERE ClientNumber = $clientNumber";
     
     if ($conn->query($sql) === TRUE) {
         echo "Запись успешно удалена.";
@@ -61,12 +71,32 @@ $result = $conn->query("SELECT * FROM clients");
         <h2>Добавить клиента</h2>
         <form method="POST">
             <div class="mb-3">
+                <label for="phone" class="form-label">Телефон</label>
+                <input type="text" name="phone" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">Адрес</label>
+                <input type="text" name="address" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="card_number" class="form-label">Номер карты</label>
+                <input type="text" name="card_number" class="form-control" />
+            </div>
+            <div class="mb-3">
                 <label for="name" class="form-label">Имя</label>
                 <input type="text" name="name" class="form-control" required />
             </div>
             <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" required />
+                <label for="surname" class="form-label">Фамилия</label>
+                <input type="text" name="surname" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="patronymic" class="form-label">Отчество</label>
+                <input type="text" name="patronymic" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="bank_number" class="form-label">Номер банка</label>
+                <input type="number" name="bank_number" class="form-control" required />
             </div>
             <button type="submit" name="add_client" class="btn btn-primary">Добавить</button>
         </form>
@@ -75,20 +105,30 @@ $result = $conn->query("SELECT * FROM clients");
         <table class="table">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>ClientNumber</th>
+                    <th>Телефон</th>
+                    <th>Адрес</th>
+                    <th>Номер карты</th>
                     <th>Имя</th>
-                    <th>Email</th>
+                    <th>Фамилия</th>
+                    <th>Отчество</th>
+                    <th>Номер банка</th>
                     <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($row['id']); ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['email']); ?></td>
+                        <td><?php echo htmlspecialchars($row['ClientNumber']); ?></td>
+                        <td><?php echo htmlspecialchars($row['Phone']); ?></td>
+                        <td><?php echo htmlspecialchars($row['Address']); ?></td>
+                        <td><?php echo htmlspecialchars($row['CardNumber']); ?></td>
+                        <td><?php echo htmlspecialchars($row['Name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['Surname']); ?></td>
+                        <td><?php echo htmlspecialchars($row['Patronymic']); ?></td>
+                        <td><?php echo htmlspecialchars($row['BankNumber']); ?></td>
                         <td>
-                            <a href="?delete=<?php echo $row['id']; ?>" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту запись?');">Удалить</a>
+                            <a href="?delete=<?php echo $row['ClientNumber']; ?>" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту запись?');">Удалить</a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
