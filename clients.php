@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $patronymic = $conn->real_escape_string($_POST['patronymic']);
         $bankNumber = (int)$_POST['bank_number'];
 
+        // Запрос на добавление клиента (ClientNumber автоинкрементируется)
         $sql = "INSERT INTO $table (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
                 VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', '$bankNumber')";
 
@@ -70,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $patronymic = $conn->real_escape_string($_POST['patronymic']);
         $bankNumber = (int)$_POST['bank_number'];
 
+        // Запрос на редактирование клиента
         $sql = "UPDATE $table SET Phone = '$phone', Address = '$address', CardNumber = '$cardNumber', 
                 Name = '$name', Surname = '$surname', Patronymic = '$patronymic', BankNumber = '$bankNumber' 
                 WHERE ClientNumber = $clientNumber";
