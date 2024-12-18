@@ -1,4 +1,3 @@
-
 <?php
 // Конфигурация базы данных
 $host = 'localhost'; 
@@ -33,12 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $conn->query("INSERT INTO $table (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
                        VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', '$bankNumber')");
+
+        // Перенаправление на ту же страницу для обновления данных
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit; // Завершение скрипта после перенаправления
     }
 
     // Удаление записи
     if (isset($_POST['delete'])) {
         $clientNumber = (int)$_POST['client_number'];
         $conn->query("DELETE FROM $table WHERE ClientNumber = $clientNumber");
+
+        // Перенаправление на ту же страницу для обновления данных
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     }
 
     // Редактирование записи
@@ -55,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->query("UPDATE $table SET Phone = '$phone', Address = '$address', CardNumber = '$cardNumber', 
                        Name = '$name', Surname = '$surname', Patronymic = '$patronymic', BankNumber = '$bankNumber' 
                        WHERE ClientNumber = $clientNumber");
+
+        // Перенаправление на ту же страницу для обновления данных
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     }
 }
 
