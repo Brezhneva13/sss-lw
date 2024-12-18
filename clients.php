@@ -1,3 +1,8 @@
+Чтобы добавить кнопку "Вернуться на главную страницу" и изменить таблицу для редактирования, давайте сначала определим, что подразумевается под "главной страницей". Обычно это может быть страница со списком клиентов или общая информация о системе.
+
+Я добавлю кнопку, которая будет возвращать пользователя на страницу со списком клиентов. Также я покажу, как можно изменить структуру таблицы для отображения данных.
+
+Обновленный код с кнопкой "Вернуться на главную страницу"
 <?php
 // Подключение к базе данных
 $host = 'localhost'; // или ваш хост
@@ -106,41 +111,55 @@ if (isset($_GET['delete'])) {
 // Получение списка клиентов
 $clients = $mysqli->query("SELECT * FROM Client");
 
+// Проверка, нужно ли редактировать клиента
+$editClient = null;
+if (isset($_GET['edit'])) {
+    $clientNumber = $_GET['edit'];
+    $stmt = $mysqli->prepare("SELECT * FROM Client WHERE ClientNumber = ?");
+    $stmt->bind_param("i", $clientNumber);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $editClient = $result->fetch_assoc();
+}
 ?>
 
-<!-- HTML форма для добавления клиента -->
+<!-- HTML форма для добавления или редактирования клиента -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Добавить клиента</title>
+    <title>Добавить/Редактировать клиента</title>
 </head>
 <body>
-    <h1>Добавить клиента</h1>
+    <h1><?php echo $editClient ? 'Редактировать клиента' : 'Добавить клиента'; ?></h1>
     <form method="POST" action="">
+        <input type="hidden" name="clientNumber" value="<?php echo $editClient['ClientNumber'] ?? ''; ?>">
         <label for="bankNumber">Номер банка:</label>
-        <input type="number" name="bankNumber" required><br>
+        <input type="number" name="bankNumber" value="<?php echo $editClient['BankNumber'] ?? ''; ?>" required><br>
 
         <label for="phone">Телефон:</label>
-        <input type="text" name="phone" required><br>
+        <input type="text" name="phone" value="<?php echo $editClient['Phone'] ?? ''; ?>" required><br>
 
         <label for="address">Адрес:</label>
-        <input type="text" name="address"><br>
+        <input type="text" name="address" value="<?php echo $editClient['Address'] ?? ''; ?>"><br>
 
         <label for="cardNumber">Номер карты:</label>
-        <input type="text" name="cardNumber" required><br>
+        <input type="text" name="cardNumber" value="<?php echo $editClient['CardNumber'] ?? ''; ?>" required><br>
 
         <label for="name">Имя:</label>
-        <input type="text" name="name" required><br>
+        <input type="text" name="name" value="<?php echo $editClient['Name'] ?? ''; ?>" required><br>
 
         <label for="surname">Фамилия:</label>
-        <input type="text" name="surname" required><br>
+        <input type="text" name="surname" value="<?php echo $editClient['Surname'] ?? ''; ?>" required><br>
 
         <label for="patronymic">Отчество:</label>
-        <input type="text" name="patronymic"><br>
+        <input type="text" name="patronymic" value="<?php echo $editClient['Patronymic'] ?? ''; ?>"><br>
 
-        <input type="submit" name="add_client" value="Добавить клиента">
+        <input type="submit" name="<?php echo $editClient ? 'edit_client' : 'add_client'; ?>" value="<?php echo $editClient ? 'Сохранить изменения' : 'Добавить клиента'; ?>">
     </form>
+
+    <br>
+    <button onclick="window.location.href='index.php'">Вернуться на главную страницу</button> <!-- Кнопка для возврата на главную страницу -->
 
     <h2>Список клиентов</h2>
     <table border="1">
@@ -166,17 +185,7 @@ $clients = $mysqli->query("SELECT * FROM Client");
             <td><?php echo $client['Patronymic']; ?></td>
             <td><?php echo $client['BankNumber']; ?></td>
             <td>
-                <form method="POST" action="" style="display:inline;">
-                    <input type="hidden" name="clientNumber" value="<?php echo $client['ClientNumber']; ?>">
-                    <input type="hidden" name="bankNumber" value="<?php echo $client['BankNumber']; ?>">
-                    <input type="hidden" name="phone" value="<?php echo $client['Phone']; ?>">
-                    <input type="hidden" name="address" value="<?php echo $client['Address']; ?>">
-                    <input type="hidden" name="cardNumber" value="<?php echo $client['CardNumber']; ?>">
-                    <input type="hidden" name="name" value="<?php echo $client['Name']; ?>">
-                    <input type="hidden" name="surname" value="<?php echo $client['Surname']; ?>">
-                    <input type="hidden" name="patronymic" value="<?php echo $client['Patronymic']; ?>">
-                    <input type="submit" name="edit_client" value="Редактировать">
-                </form>
+                <a href="?edit=<?php echo $client['ClientNumber']; ?>">Редактировать</a>
                 <a href="?delete=<?php echo $client['ClientNumber']; ?>" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
             </td>
         </tr>
