@@ -1,261 +1,117 @@
 <?php
-// Конфигурация базы данных
-$host = 'localhost'; 
-$db = 'transaction_system'; // Исправлено название базы данных
-$user = 'egor'; 
-$password = '0000'; 
+// Подключение к базе данных
+$host = 'localhost'; // или ваш хост
+$user = 'root'; // ваш пользователь
+$password = ''; // ваш пароль
+$database = 'transaction_system'; // имя базы данных
 
-// Соединение с сервером MySQL
-$conn = new mysqli($host, $user, $password, $db);
+$mysqli = new mysqli($host, $user, $password, $database);
 
 // Проверка соединения
-if ($conn->connect_error) {
-    die("Ошибка подключения: " . $conn->connect_error);
+if ($mysqli->connect_error) {
+    die("Ошибка подключения: " . $mysqli->connect_error);
 }
 
-// Установка кодировки UTF-8
-$conn->set_charset("utf8mb4");
+// Создание таблицы Bank, если она не существует
+$createBankTable = "
+CREATE TABLE IF NOT EXISTS Bank (
+    BankNumber INT AUTO_INCREMENT PRIMARY KEY,
+    BankName VARCHAR(100) NOT NULL
+)";
+$mysqli->query($createBankTable);
 
-// Включение отображения ошибок
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Создание таблицы Client, если она не существует
+$createClientTable = "
+CREATE TABLE IF NOT EXISTS Client (
+    ClientNumber INT AUTO_INCREMENT PRIMARY KEY,
+    Phone VARCHAR(20) NOT NULL,
+    Address VARCHAR(100),
+    CardNumber VARCHAR(20),
+    Name VARCHAR(50) NOT NULL,
+    Surname VARCHAR(50) NOT NULL,
+    Patronymic VARCHAR(50),
+    BankNumber INT,
+    FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber)
+)";
+$mysqli->query($createClientTable);
 
-// Обработка добавления, редактирования и удаления записей
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $table = 'Client'; // Название таблицы
+// Пример вставки банка (можно убрать, если банки уже добавлены)
+$bankName = 'Название банка';
+$insertBank = $mysqli->prepare("INSERT INTO Bank (BankName) VALUES (?)");
+$insertBank->bind_param("s", $bankName);
+$insertBank->execute();
+$insertBank->close();
 
-    // Добавление новой записи
-    if (isset($_POST['add'])) {
-        $phone = $conn->real_escape_string($_POST['phone']);
-        $address = $conn->real_escape_string($_POST['address']);
-        $cardNumber = $conn->real_escape_string($_POST['card_number']);
-        $name = $conn->real_escape_string($_POST['name']);
-        $surname = $conn->real_escape_string($_POST['surname']);
-        $patronymic = $conn->real_escape_string($_POST['patronymic']);
-        $bankNumber = (int)$_POST['bank_number'];
+// Вставка клиента
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Получение данных из формы
+    $bankNumber = $_POST['bankNumber']; // Предположим, вы получаете BankNumber из формы
+    $phone = $_POST['phone'];
+    $address = $_POST['address'];
+    $cardNumber = $_POST['cardNumber'];
+    $name = $_POST['name'];
+    $surname = $_POST['surname'];
+    $patronymic = $_POST['patronymic'];
 
-        // Запрос на добавление клиента (ClientNumber автоинкрементируется)
-        $sql = "INSERT INTO $table (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
-                VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', '$bankNumber')";
+    // Проверка существования банка
+    $stmt = $mysqli->prepare("SELECT BankNumber FROM Bank WHERE BankNumber = ?");
+    $stmt->bind_param("i", $bankNumber);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-        if ($conn->query($sql) === FALSE) {
-            echo "Ошибка при добавлении: " . $conn->error;
+    if ($result->num_rows > 0) {
+        // Банк существует, можно добавлять клиента
+        $stmt = $mysqli->prepare("INSERT INTO Client (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssi", $phone, $address, $cardNumber, $name, $surname, $patronymic, $bankNumber);
+        
+        if ($stmt->execute()) {
+            echo "Клиент успешно добавлен.";
         } else {
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit;
+            echo "Ошибка при добавлении клиента: " . $stmt->error;
         }
+    } else {
+        echo "Ошибка: указанный банк не существует.";
     }
 
-    // Удаление записи
-    if (isset($_POST['delete'])) {
-        $clientNumber = (int)$_POST['client_number'];
-        $sql = "DELETE FROM $table WHERE ClientNumber = $clientNumber";
-
-        if ($conn->query($sql) === FALSE) {
-            echo "Ошибка при удалении: " . $conn->error;
-        } else {
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit;
-        }
-    }
-
-    // Редактирование записи
-    if (isset($_POST['edit'])) {
-        $clientNumber = (int)$_POST['client_number'];
-        $phone = $conn->real_escape_string($_POST['phone']);
-        $address = $conn->real_escape_string($_POST['address']);
-        $cardNumber = $conn->real_escape_string($_POST['card_number']);
-        $name = $conn->real_escape_string($_POST['name']);
-        $surname = $conn->real_escape_string($_POST['surname']);
-        $patronymic = $conn->real_escape_string($_POST['patronymic']);
-        $bankNumber = (int)$_POST['bank_number'];
-
-        // Запрос на редактирование клиента
-        $sql = "UPDATE $table SET Phone = '$phone', Address = '$address', CardNumber = '$cardNumber', 
-                Name = '$name', Surname = '$surname', Patronymic = '$patronymic', BankNumber = '$bankNumber' 
-                WHERE ClientNumber = $clientNumber";
-
-        if ($conn->query($sql) === FALSE) {
-            echo "Ошибка при редактировании: " . $conn->error;
-        } else {
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit;
-        }
-    }
+    $stmt->close();
 }
 
-// Получаем данные из таблицы
-$result = $conn->query("SELECT * FROM Client");
+// Закрытие соединения
+$mysqli->close();
 ?>
 
+<!-- HTML форма для добавления клиента -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Клиенты</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Добавить клиента</title>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1>Клиенты</h1>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Номер клиента</th>
-                    <th>Телефон</th>
-                    <th>Адрес</th>
-                    <th>Номер карты</th>
-                    <th>Имя</th>
-                    <th>Фамилия</th>
-                    <th>Отчество</th>
-                    <th>Номер банка</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['ClientNumber']); ?></td>
-                    <td><?php echo htmlspecialchars($row['Phone']); ?></td>
-                    <td><?php echo htmlspecialchars($row['Address']); ?></td>
-                    <td><?php echo htmlspecialchars($row['CardNumber']); ?></td>
-                    <td><?php echo htmlspecialchars($row['Name']); ?></td>
-                    <td><?php echo htmlspecialchars($row['Surname']); ?></td>
-                    <td><?php echo htmlspecialchars($row['Patronymic']); ?></td>
-                    <td><?php echo htmlspecialchars($row['BankNumber']); ?></td>
-                    <td>
-                        <button class="btn btn-primary btn-sm edit-btn" data-client-number="<?php echo htmlspecialchars($row['ClientNumber']); ?>" 
-                                data-values='<?php echo htmlspecialchars(json_encode($row)); ?>'>Редактировать</button>
-                        <button class="btn btn-danger btn-sm delete-btn" data-client-number="<?php echo htmlspecialchars($row['ClientNumber']); ?>">Удалить</button>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+    <h1>Добавить клиента</h1>
+    <form method="POST" action="">
+        <label for="bankNumber">Номер банка:</label>
+        <input type="number" name="bankNumber" required><br>
 
-        <h3>Добавить нового клиента</h3>
-        <form id="addForm" method="post">
-            <div class="mb-3">
-                <input type="text" name="phone" placeholder="Телефон" required>
-            </div>
-            <div class="mb-3">
-                <input type="text" name="address" placeholder="Адрес">
-            </div>
-            <div class="mb-3">
-                <input type="text" name="card_number" placeholder="Номер карты">
-            </div>
-            <div class="mb-3">
-                <input type="text" name="name" placeholder="Имя" required>
-            </div>
-            <div class="mb-3">
-                <input type="text" name="surname" placeholder="Фамилия" required>
-            </div>
-            <div class="mb-3">
-                <input type="text" name="patronymic" placeholder="Отчество">
-            </div>
-            <div class="mb-3">
-                <input type="number" name="bank_number" placeholder="Номер банка">
-            </div>
-            <button type="submit" name="add" class="btn btn-success">Добавить</button>
-        </form>
-    </div>
+        <label for="phone">Телефон:</label>
+        <input type="text" name="phone" required><br>
 
-    <!-- Модальное окно для редактирования -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Редактирование клиента</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editForm" method="post">
-                        <input type="hidden" name="client_number" id="editClientNumber">
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editPhone" name="phone" placeholder="Телефон" required>
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editAddress" name="address" placeholder="Адрес">
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editCardNumber" name="card_number" placeholder="Номер карты">
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editName" name="name" placeholder="Имя" required>
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editSurname" name="surname" placeholder="Фамилия" required>
-                        </div>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="editPatronymic" name="patronymic" placeholder="Отчество">
-                        </div>
-                        <div class="mb-3">
-                            <input type="number" class="form-control" id="editBankNumber" name="bank_number" placeholder="Номер банка">
-                        </div>
-                        <button type="submit" name="edit" class="btn btn-primary">Сохранить изменения</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+        <label for="address">Адрес:</label>
+        <input type="text" name="address"><br>
 
-    <!-- Модальное окно для подтверждения удаления -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Вы уверены, что хотите удалить этого клиента?
-                </div>
-                <div class="modal-footer">
-                    <form id="deleteForm" method="post">
-                        <input type="hidden" name="client_number" id="deleteClientNumber">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" name="delete" class="btn btn-danger">Удалить</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+        <label for="cardNumber">Номер карты:</label>
+        <input type="text" name="cardNumber" required><br>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Открытие модального окна для редактирования
-            $('.edit-btn').on('click', function() {
-                const clientNumber = $(this).data('client-number');
-                const values = $(this).data('values');
-                
-                $('#editClientNumber').val(clientNumber);
-                $('#editPhone').val(values.Phone);
-                $('#editAddress').val(values.Address);
-                $('#editCardNumber').val(values.CardNumber);
-                $('#editName').val(values.Name);
-                $('#editSurname').val(values.Surname);
-                $('#editPatronymic').val(values.Patronymic);
-                $('#editBankNumber').val(values.BankNumber);
+        <label for="name">Имя:</label>
+        <input type="text" name="name" required><br>
 
-                $('#editModal').modal('show');
-            });
+        <label for="surname">Фамилия:</label>
+        <input type="text" name="surname" required><br>
 
-            // Открытие модального окна для удаления
-            $('.delete-btn').on('click', function() {
-                const clientNumber = $(this).data('client-number');
-                $('#deleteClientNumber').val(clientNumber);
-                $('#deleteModal').modal('show');
-            });
-        });
-    </script>
+        <label for="patronymic">Отчество:</label>
+        <input type="text" name="patronymic"><br>
+
+        <input type="submit" value="Добавить клиента">
+    </form>
 </body>
 </html>
-
-<?php
-// Закрытие соединения
-$conn->close();
-?>
