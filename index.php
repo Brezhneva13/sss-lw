@@ -60,44 +60,114 @@
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-primary text-white mb-4">
-                                <div class="card-body">Primary Card</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="#">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-warning text-white mb-4">
-                                <div class="card-body">Warning Card</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="#">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-success text-white mb-4">
-                                <div class="card-body">Success Card</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="#">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6">
-                            <div class="card bg-danger text-white mb-4">
-                                <div class="card-body">Danger Card</div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="#">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
+                    <!-- Здесь начинается PHP-код для отображения баз данных и таблиц -->
+                    <?php
+                    // Конфигурация базы данных
+                    $host = 'localhost'; // Обычно localhost
+                    $db = 'transaction_sistem';
+                    $user = 'egor'; // Имя пользователя базы данных
+                    $password = '0000'; // Пароль пользователя базы данных
+
+                    // Соединение с сервером MySQL
+                    $conn = new mysqli($host, $user, $password);
+
+                    // Проверка соединения
+                    if ($conn->connect_error) {
+                        die("Ошибка подключения: " . $conn->connect_error);
+                    }
+
+                    // Функция для отображения баз данных
+                    function getDatabases($conn) {
+                        echo "<h2>Доступные базы данных</h2>";
+                        echo "<ul>";
+                        $result = $conn->query("SHOW DATABASES");
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<li><a href="?db=' . urlencode($row['Database']) . '">' . htmlspecialchars($row['Database']) . '</a></li>';
+                        }
+                        echo "</ul>";
+                    }
+
+                    // Функция для отображения таблиц
+                    function getTables($conn, $db) {
+                        $conn->select_db($db);
+                        echo "<h2>Таблицы в базе данных: " . htmlspecialchars($db) . "</h2>";
+                        echo "<ul>";
+                        $result = $conn->query("SHOW TABLES");
+                        while ($row = $result->fetch_row()) {
+                            echo '<li><a href="?db=' . urlencode($db) . '&table=' . urlencode($row[0]) . '">' . htmlspecialchars($row[0]) . '</a></li>';
+                        }
+                        echo "</ul>";
+                    }
+
+                    // Функция для отображения данных таблицы
+                    function getTableData($conn, $db, $table) {
+                        $conn->select_db($db);
+                        echo "<h2>Данные таблицы: " . htmlspecialchars($table) . "</h2>";
+
+                        // Вывод структуры таблицы
+                        $result = $conn->query("SHOW COLUMNS FROM " . $conn->real_escape_string($table));
+                        echo "<h3>Структура таблицы</h3>";
+                        echo "<table class='table'>";
+                        echo "<tr><th>Поле</th><th>Тип</th></tr>";
+                        while ($row = $result->fetch_assoc()) {
+                            echo "<tr><td>" . htmlspecialchars($row['Field']) . "</td><td>" . htmlspecialchars($row['Type']) . "</td></tr>";
+                        }
+                        echo "</table>";
+
+                        // Пагинация
+                        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+                        $limit = 50;
+                        $offset = ($page - 1) * $limit;
+
+                        // Вывод данных таблицы
+                        $result = $conn->query("SELECT * FROM " . $conn->real_escape_string($table) . " LIMIT $limit OFFSET $offset");
+                        echo "<h3>Данные таблицы</h3>";
+                        echo "<table class='table'><tr>";
+
+                        // Получаем названия колонок
+                        $fields = $result->fetch_fields();
+                        foreach ($fields as $field) {
+                            echo "<th>" . htmlspecialchars($field->name) . "</th>";
+                        }
+                        echo "</tr>";
+
+                        // Вывод данных
+                        while ($row = $result->fetch_assoc()) {
+                            echo "<tr>";
+                            foreach ($row as $value) {
+                                echo "<td>" . htmlspecialchars($value) . "</td>";
+                            }
+                            echo "</tr>";
+                        }
+                        echo "</table>";
+
+                        // Если есть данные для пагинации
+                        $resultTotal = $conn->query("SELECT COUNT(*) AS total FROM " . $conn->real_escape_string($table));
+                        $total = $resultTotal->fetch_assoc()['total'];
+                        $totalPages = ceil($total / $limit);
+
+                        // Вывод пагинации
+                        echo "<div>";
+                        for ($i = 1; $i <= $totalPages; $i++) {
+                            echo '<a href="?db=' . urlencode($db) . '&table=' . urlencode($table) . '&page=' . $i . '">' . $i . '</a> ';
+                        }
+                        echo "</div>";
+                    }
+
+                    // Основная логика
+                    if (isset($_GET['db']) && isset($_GET['table'])) {
+                        getTableData($conn, $_GET['db'], $_GET['table']);
+                    } elseif (isset($_GET['db'])) {
+                        getTables($conn, $_GET['db']);
+                    } else {
+                        getDatabases($conn);
+                    }
+
+                    // Закрытие соединения
+                    $conn->close();
+                    ?>
+                    <!-- Здесь заканчивается PHP-код -->
                 </div>
             </main>
             <footer class="py-4 bg-light mt-auto">
