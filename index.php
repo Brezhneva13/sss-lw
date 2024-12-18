@@ -61,11 +61,11 @@
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
 
-                    <!-- Здесь начинается PHP-код для отображения баз данных и таблиц -->
+                    <!-- Здесь начинается PHP-код для отображения таблиц и данных -->
                     <?php
                     // Конфигурация базы данных
                     $host = 'localhost'; // Обычно localhost
-                    $db = 'transaction_sistem';
+                    $db = 'transaction_sistem'; // Укажите нужную базу данных
                     $user = 'egor'; // Имя пользователя базы данных
                     $password = '0000'; // Пароль пользователя базы данных
 
@@ -75,17 +75,6 @@
                     // Проверка соединения
                     if ($conn->connect_error) {
                         die("Ошибка подключения: " . $conn->connect_error);
-                    }
-
-                    // Функция для отображения баз данных
-                    function getDatabases($conn) {
-                        echo "<h2>Доступные базы данных</h2>";
-                        echo "<ul>";
-                        $result = $conn->query("SHOW DATABASES");
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<li><a href="?db=' . urlencode($row['Database']) . '">' . htmlspecialchars($row['Database']) . '</a></li>';
-                        }
-                        echo "</ul>";
                     }
 
                     // Функция для отображения таблиц
@@ -156,12 +145,11 @@
                     }
 
                     // Основная логика
-                    if (isset($_GET['db']) && isset($_GET['table'])) {
-                        getTableData($conn, $_GET['db'], $_GET['table']);
-                    } elseif (isset($_GET['db'])) {
-                        getTables($conn, $_GET['db']);
+                    $db = $db; // Используем заранее определенную базу данных
+                    if (isset($_GET['table'])) {
+                        getTableData($conn, $db, $_GET['table']);
                     } else {
-                        getDatabases($conn);
+                        getTables($conn, $db);
                     }
 
                     // Закрытие соединения
