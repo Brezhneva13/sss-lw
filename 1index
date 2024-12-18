@@ -10,7 +10,6 @@
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -50,13 +49,13 @@
                                 <a class="nav-link" href="layout-sidenav-light.html">Светлая боковая панель</a>
                             </nav>
                         </div>
-                        <a class="nav-link" href="clients.php">Клиенты</a>
-                        <a class="nav-link" href="terminal.php">Терминалы</a>
-                        <a class="nav-link" href="transaction.php">Транзакции</a>
-                        <a class="nav-link" href="attempt.php">Попытки</a>
-                        <a class="nav-link" href="client_status.php">Статусы клиентов</a>
-                        <a class="nav-link" href="card_type.php">Типы карт</a>
-                        <a class="nav-link" href="transaction_status.php">Статусы транзакций</a>
+                        <a class="nav-link" href="pages/client.php">Клиенты</a>
+                        <a class="nav-link" href="pages/terminal.php">Терминалы</a>
+                        <a class="nav-link" href="pages/transaction.php">Транзакции</a>
+                        <a class="nav-link" href="pages/attempt.php">Попытки</a>
+                        <a class="nav-link" href="pages/client_status.php">Статусы клиентов</a>
+                        <a class="nav-link" href="pages/card_type.php">Типы карт</a>
+                        <a class="nav-link" href="pages/transaction_status.php">Статусы транзакций</a>
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">
@@ -77,7 +76,7 @@
                     <?php
                     // Конфигурация базы данных
                     $host = 'localhost'; // Обычно localhost
-                    $db = 'transaction_sistem'; // Укажите нужную базу данных
+                    $db = 'transaction_system'; // Укажите нужную базу данных
                     $user = 'egor'; // Имя пользователя базы данных
                     $password = '0000'; // Пароль пользователя базы данных
 
@@ -102,24 +101,6 @@
                         'card_type' => 'Типы карт',
                         'transaction_status' => 'Статусы транзакций',
                     ];
-
-                    // Получение данных для графиков
-                    $terminalData = [];
-                    $clientData = [];
-
-                    // Получение количества терминалов по банкам
-                    $terminalQuery = "SELECT BankNumber, COUNT(*) as count FROM terminals GROUP BY BankNumber";
-                    $terminalResult = $conn->query($terminalQuery);
-                    while ($row = $terminalResult->fetch_assoc()) {
-                        $terminalData[$row['BankNumber']] = $row['count'];
-                    }
-
-                    // Получение количества клиентов по банкам
-                    $clientQuery = "SELECT BankNumber, COUNT(*) as count FROM clients GROUP BY BankNumber";
-                    $clientResult = $conn->query($clientQuery);
-                    while ($row = $clientResult->fetch_assoc()) {
-                        $clientData[$row['BankNumber']] = $row['count'];
-                    }
 
                     // Функция для отображения таблиц
                     function getTables($conn, $tableNames) {
@@ -172,73 +153,6 @@
                     $conn->close();
                     ?>
                     <!-- Здесь заканчивается PHP-код -->
-
-                    <!-- Графики -->
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h2>Количество терминалов по банкам</h2>
-                            <canvas id="terminalChart"></canvas>
-                        </div>
-                        <div class="col-md-6">
-                            <h2>Количество клиентов по банкам</h2>
-                            <canvas id="clientChart"></canvas>
-                        </div>
-                    </div>
-
-                    <script>
-                        // Данные для графиков
-                        const terminalData = <?php echo json_encode(array_values($terminalData)); ?>;
-                        const terminalLabels = <?php echo json_encode(array_keys($terminalData)); ?>;
-
-                        const clientData = <?php echo json_encode(array_values($clientData)); ?>;
-                        const clientLabels = <?php echo json_encode(array_keys($clientData)); ?>;
-
-                        // График терминалов
-                        const ctx1 = document.getElementById('terminalChart').getContext('2d');
-                        const terminalChart = new Chart(ctx1, {
-                            type: 'bar',
-                            data: {
-                                labels: terminalLabels,
-                                datasets: [{
-                                    label: 'Количество терминалов',
-                                    data: terminalData,
-                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }
-                        });
-
-                        // График клиентов
-                        const ctx2 = document.getElementById('clientChart').getContext('2d');
-                        const clientChart = new Chart(ctx2, {
-                            type: 'bar',
-                            data: {
-                                labels: clientLabels,
-                                datasets: [{
-                                    label: 'Количество клиентов',
-                                    data: clientData,
-                                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                                    borderColor: 'rgba(153, 102, 255, 1)',
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }
-                        });
-                    </script>
                 </div>
             </main>
             <footer class="py-4 bg-light mt-auto">
