@@ -1,5 +1,3 @@
-Конечно! Вот полный код для файла index.php, который включает все изменения, необходимые для корректного отображения данных из базы данных на русском языке:
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Dashboard - SB Admin</title>
+    <title>Админ Панель</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -82,22 +80,36 @@
                     // Установка кодировки UTF-8
                     $conn->set_charset("utf8mb4");
 
+                    // Соответствие английских и русских названий таблиц
+                    $tableNames = [
+                        'clients' => 'Клиенты',
+                        'terminals' => 'Терминалы',
+                        'transactions' => 'Транзакции',
+                        'attempts' => 'Попытки',
+                        'client_status' => 'Статусы клиентов',
+                        'card_type' => 'Типы карт',
+                        'transaction_status' => 'Статусы транзакций',
+                    ];
+
                     // Функция для отображения таблиц
-                    function getTables($conn, $db) {
+                    function getTables($conn, $db, $tableNames) {
                         $conn->select_db($db);
                         echo "<h2>Таблицы в базе данных: " . htmlspecialchars($db) . "</h2>";
                         echo "<ul>";
                         $result = $conn->query("SHOW TABLES");
                         while ($row = $result->fetch_row()) {
-                            echo '<li><a href="?db=' . urlencode($db) . '&table=' . urlencode($row[0]) . '">' . htmlspecialchars($row[0]) . '</a></li>';
+                            $tableName = $row[0];
+                            $displayName = isset($tableNames[$tableName]) ? $tableNames[$tableName] : $tableName;
+                            echo '<li><a href="?db=' . urlencode($db) . '&table=' . urlencode($tableName) . '">' . htmlspecialchars($displayName) . '</a></li>';
                         }
                         echo "</ul>";
                     }
 
                     // Функция для отображения данных таблицы
-                    function getTableData($conn, $db, $table) {
+                    function getTableData($conn, $db, $table, $tableNames) {
                         $conn->select_db($db);
-                        echo "<h2>Данные таблицы: " . htmlspecialchars($table) . "</h2>";
+                        $displayName = isset($tableNames[$table]) ? $tableNames[$table] : $table;
+                        echo "<h2>Данные таблицы: " . htmlspecialchars($displayName) . "</h2>";
 
                         // Вывод структуры таблицы
                         $result = $conn->query("SHOW COLUMNS FROM " . $conn->real_escape_string($table));
@@ -150,11 +162,10 @@
                     }
 
                     // Основная логика
-                    $db = $db; // Используем заранее определенную базу данных
                     if (isset($_GET['table'])) {
-                        getTableData($conn, $db, $_GET['table']);
+                        getTableData($conn, $db, $_GET['table'], $tableNames);
                     } else {
-                        getTables($conn, $db);
+                        getTables($conn, $db, $tableNames);
                     }
 
                     // Закрытие соединения
