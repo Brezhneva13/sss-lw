@@ -1,3 +1,9 @@
+<?php
+// Включаем вывод ошибок для диагностики
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +23,31 @@
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
     </nav>
     <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <a class="nav-link" href="index.html">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="banks.php">
+                            <div class="sb-nav-link-icon"><i class="fas fa-university"></i></div>
+                            Banks
+                        </a>
+                        <a class="nav-link" href="clients.php">
+                            <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                            Clients
+                        </a>
+                        <a class="nav-link" href="transactions.php">
+                            <div class="sb-nav-link-icon"><i class="fas fa-exchange-alt"></i></div>
+                            Transactions
+                        </a>
+                        <!-- Добавьте другие ссылки по мере необходимости -->
+                    </div>
+                </div>
+            </nav>
+        </div>
         <div id="layoutSidenav_content">
             <main>
                 <div class="container-fluid px-4">
@@ -24,6 +55,22 @@
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
+
+                    <?php
+                    // Подключение к базе данных
+                    $servername = "localhost"; // Или ваш сервер базы данных
+                    $username = "egor"; // Ваше имя пользователя
+                    $password = "0000"; // Ваш пароль
+                    $dbname = "transaction_sistem"; // Название вашей базы данных
+
+                    // Создание подключения
+                    $conn = new mysqli($servername, $username, $password, $dbname);
+
+                    // Проверка подключения
+                    if ($conn->connect_error) {
+                        die("Connection failed: " . $conn->connect_error);
+                    }
+                    ?>
 
                     <!-- Таблица Bank -->
                     <div class="card mb-4">
@@ -41,7 +88,6 @@
                                 </thead>
                                 <tbody>
                                     <?php
-                                    include 'db.php';
                                     $sql = "SELECT BankNumber, BankName FROM Bank";
                                     $result = $conn->query($sql);
                                     if ($result->num_rows > 0) {
