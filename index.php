@@ -1,28 +1,30 @@
+Конечно! Давайте добавим указанный вами код для навигационной панели и бокового меню в файл index.php. Я интегрирую ваши изменения, чтобы сохранить единый стиль и структуру. Вот обновлённый код:
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Dashboard - Admin Panel</title>
+    <title>Админ Панель</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="index.php">Admin Panel</a>
+        <a class="navbar-brand ps-3" href="index.php">Админ Панель</a>
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
         <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                    <li><a class="dropdown-item" href="#!">Настройки</a></li>
+                    <li><a class="dropdown-item" href="#!">Журнал активности</a></li>
                     <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="#!">Logout</a></li>
+                    <li><a class="dropdown-item" href="#!">Выход</a></li>
                 </ul>
             </li>
         </ul>
@@ -32,37 +34,53 @@
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <div class="sb-sidenav-menu-heading">Основные</div>
                         <a class="nav-link" href="index.php">
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                            Dashboard
+                            Панель управления
                         </a>
-                        <div class="sb-sidenav-menu-heading">Database Management</div>
-                        <a class="nav-link" href="?table=clients">Clients</a>
-                        <a class="nav-link" href="?table=terminals">Terminals</a>
-                        <a class="nav-link" href="?table=transactions">Transactions</a>
+                        <div class="sb-sidenav-menu-heading">Интерфейс</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
+                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                            Макеты
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="layout-static.html">Статическая навигация</a>
+                                <a class="nav-link" href="layout-sidenav-light.html">Светлая боковая панель</a>
+                            </nav>
+                        </div>
+                        <a class="nav-link" href="pages/client.php">Клиенты</a>
+                        <a class="nav-link" href="pages/terminal.php">Терминалы</a>
+                        <a class="nav-link" href="pages/transaction.php">Транзакции</a>
+                        <a class="nav-link" href="pages/attempt.php">Попытки</a>
+                        <a class="nav-link" href="pages/client_status.php">Статусы клиентов</a>
+                        <a class="nav-link" href="pages/card_type.php">Типы карт</a>
+                        <a class="nav-link" href="pages/transaction_status.php">Статусы транзакций</a>
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">
-                    <div class="small">Logged in as:</div>
-                    Admin
+                    <div class="small">Вошел как:</div>
+                    Администратор
                 </div>
             </nav>
         </div>
         <div id="layoutSidenav_content">
             <main>
                 <div class="container-fluid px-4">
-                    <h1 class="mt-4">Dashboard</h1>
+                    <h1 class="mt-4">Панель управления</h1>
                     <ol class="breadcrumb mb-4">
-                        <li class="breadcrumb-item active">Dashboard</li>
+                        <li class="breadcrumb-item active">Панель управления</li>
                     </ol>
 
+                    <!-- Здесь начинается PHP-код для отображения таблиц и данных -->
                     <?php
                     // Конфигурация базы данных
-                    $host = 'localhost';
-                    $db = 'transaction_system';
-                    $user = 'egor';
-                    $password = '0000';
+                    $host = 'localhost'; // Обычно localhost
+                    $db = 'transaction_system'; // Укажите нужную базу данных
+                    $user = 'egor'; // Имя пользователя базы данных
+                    $password = '0000'; // Пароль пользователя базы данных
 
                     // Соединение с сервером MySQL
                     $conn = new mysqli($host, $user, $password, $db);
@@ -80,14 +98,21 @@
                         'clients' => 'Клиенты',
                         'terminals' => 'Терминалы',
                         'transactions' => 'Транзакции',
+                        'attempts' => 'Попытки',
+                        'client_status' => 'Статусы клиентов',
+                        'card_type' => 'Типы карт',
+                        'transaction_status' => 'Статусы транзакций',
                     ];
 
                     // Функция для отображения таблиц
-                    function getTables($tableNames) {
+                    function getTables($conn, $tableNames) {
                         echo "<h2>Таблицы в базе данных</h2>";
                         echo "<ul>";
-                        foreach ($tableNames as $table => $displayName) {
-                            echo '<li><a href="?table=' . urlencode($table) . '">' . htmlspecialchars($displayName) . '</a></li>';
+                        $result = $conn->query("SHOW TABLES");
+                        while ($row = $result->fetch_row()) {
+                            $tableName = $row[0];
+                            $displayName = isset($tableNames[$tableName]) ? $tableNames[$tableName] : $tableName;
+                            echo '<li><a href="?table=' . urlencode($tableName) . '">' . htmlspecialchars($displayName) . '</a></li>';
                         }
                         echo "</ul>";
                     }
@@ -123,12 +148,13 @@
                     if (isset($_GET['table'])) {
                         getTableData($conn, $_GET['table'], $tableNames);
                     } else {
-                        getTables($tableNames);
+                        getTables($conn, $tableNames);
                     }
 
                     // Закрытие соединения
                     $conn->close();
                     ?>
+                    <!-- Здесь заканчивается PHP-код -->
                 </div>
             </main>
             <footer class="py-4 bg-light mt-auto">
