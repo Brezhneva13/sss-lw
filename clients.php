@@ -16,6 +16,11 @@ if ($conn->connect_error) {
 // Установка кодировки UTF-8
 $conn->set_charset("utf8mb4");
 
+// Включение отображения ошибок
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Обработка добавления, редактирования и удаления записей
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $table = 'Client'; // Название таблицы
@@ -30,22 +35,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $patronymic = $conn->real_escape_string($_POST['patronymic']);
         $bankNumber = (int)$_POST['bank_number'];
 
-        $conn->query("INSERT INTO $table (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
-                       VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', '$bankNumber')");
+        $sql = "INSERT INTO $table (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) 
+                VALUES ('$phone', '$address', '$cardNumber', '$name', '$surname', '$patronymic', '$bankNumber')";
 
-        // Перенаправление на ту же страницу для обновления данных
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit; // Завершение скрипта после перенаправления
+        if ($conn->query($sql) === FALSE) {
+            echo "Ошибка при добавлении: " . $conn->error;
+        } else {
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
     }
 
     // Удаление записи
     if (isset($_POST['delete'])) {
         $clientNumber = (int)$_POST['client_number'];
-        $conn->query("DELETE FROM $table WHERE ClientNumber = $clientNumber");
+        $sql = "DELETE FROM $table WHERE ClientNumber = $clientNumber";
 
-        // Перенаправление на ту же страницу для обновления данных
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit;
+        if ($conn->query($sql) === FALSE) {
+            echo "Ошибка при удалении: " . $conn->error;
+        } else {
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
     }
 
     // Редактирование записи
@@ -59,13 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $patronymic = $conn->real_escape_string($_POST['patronymic']);
         $bankNumber = (int)$_POST['bank_number'];
 
-        $conn->query("UPDATE $table SET Phone = '$phone', Address = '$address', CardNumber = '$cardNumber', 
-                       Name = '$name', Surname = '$surname', Patronymic = '$patronymic', BankNumber = '$bankNumber' 
-                       WHERE ClientNumber = $clientNumber");
+        $sql = "UPDATE $table SET Phone = '$phone', Address = '$address', CardNumber = '$cardNumber', 
+                Name = '$name', Surname = '$surname', Patronymic = '$patronymic', BankNumber = '$bankNumber' 
+                WHERE ClientNumber = $clientNumber";
 
-        // Перенаправление на ту же страницу для обновления данных
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit;
+        if ($conn->query($sql) === FALSE) {
+            echo "Ошибка при редактировании: " . $conn->error;
+        } else {
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
     }
 }
 
