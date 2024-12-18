@@ -1,0 +1,104 @@
+<?php
+// Конфигурация базы данных
+$host = 'localhost'; // Обычно localhost
+$db = 'transaction_sistem';
+$user = 'egor'; // Имя пользователя базы данных
+$password = '0000'; // Пароль пользователя базы данных
+
+// Соединение с сервером MySQL
+$conn = new mysqli($host, $user, $password);
+
+// Проверка соединения
+if ($conn->connect_error) {
+die("Ошибка подключения: " . $conn->connect_error);
+}
+
+// Функция для отображения баз данных
+function getDatabases($conn) {
+echo "<h2>Доступные базы данных</h2>";
+echo "<ul>";
+$result = $conn->query("SHOW DATABASES");
+while ($row = $result->fetch_assoc()) {
+echo '<li><a href="?db=' . urlencode($row['Database']) . '">' . htmlspecialchar>
+}
+echo "</ul>";
+}
+
+// Функция для отображения таблиц
+function getTables($conn, $db) {
+$conn->select_db($db);
+echo "<h2>Таблицы в базе данных: " . htmlspecialchars($db) . "</h2>";
+echo "<ul>";
+$result = $conn->query("SHOW TABLES");
+while ($row = $result->fetch_row()) {
+echo '<li><a href="?db=' . urlencode($db) . '&table=' . urlencode($row[0]) . '">
+}
+echo "</ul>";
+}
+
+// Функция для отображения данных таблицы
+function getTableData($conn, $db, $table) {
+$conn->select_db($db);
+echo "<h2>Данные таблицы: " . htmlspecialchars($table) . "</h2>";
+
+// Вывод структуры таблицы
+$result = $conn->query("SHOW COLUMNS FROM " . $conn->real_escape_string($table)>
+echo "<h3>Структура таблицы</h3>";
+echo "<table><tr><th>Поле</th><th>Тип</th></tr>";
+while ($row = $result->fetch_assoc()) {
+echo "<tr><td>" . htmlspecialchars($row['Field']) . "</td><td>" . htmlspecialch>
+}echo "</table>";
+
+// Пагинация
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 50;
+$offset = ($page - 1) * $limit;
+
+// Вывод данных таблицы
+$result = $conn->query("SELECT * FROM " . $conn->real_escape_string($table) . ">
+echo "<h3>Данные таблицы</h3>";
+echo "<table><tr>";
+
+// Получаем названия колонок
+$fields = $result->fetch_fields();
+foreach ($fields as $field) {
+echo "<th>" . htmlspecialchars($field->name) . "</th>";
+}
+echo "</tr>";
+echo "<tr>";
+foreach ($row as $value) {
+echo "<td>" . htmlspecialchars($value) . "</td>";
+}
+echo "</tr>";
+}
+echo "</table>";
+
+// Если есть данные для пагинации
+$resultTotal = $conn->query("SELECT COUNT(*) AS total FROM " . $conn->real_esca>
+$total = $resultTotal->fetch_assoc()['total'];
+$totalPages = ceil($total / $limit);
+
+// Вывод пагинации
+echo "<div>";
+for ($i = 1; $i <= $totalPages; $i++) {
+echo '<a href="?db=' . urlencode($db) . '&table=' . urlencode($table) . '&page=>
+}
+echo "</div>";
+}
+
+// Основная логика
+if (isset($_GET['db']) && isset($_GET['table'])) {
+getTableData($conn, $_GET['db'], $_GET['table']);
+} elseif (isset($_GET['db'])) {
+getTables($conn, $_GET['db']);
+} else {
+getDatabases($conn);
+}
+
+// Закрытие соединения
+$conn->close();
+?>
+
+
+while ($row = $result->fetch_assoc()) {
+
