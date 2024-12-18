@@ -35,17 +35,10 @@ CREATE TABLE IF NOT EXISTS Client (
 )";
 $mysqli->query($createClientTable);
 
-// Пример вставки банка (можно убрать, если банки уже добавлены)
-$bankName = 'Название банка';
-$insertBank = $mysqli->prepare("INSERT INTO Bank (BankName) VALUES (?)");
-$insertBank->bind_param("s", $bankName);
-$insertBank->execute();
-$insertBank->close();
-
-// Вставка клиента
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Обработка добавления клиента
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_client'])) {
     // Получение данных из формы
-    $bankNumber = $_POST['bankNumber']; // Предположим, вы получаете BankNumber из формы
+    $bankNumber = $_POST['bankNumber'];
     $phone = $_POST['phone'];
     $address = $_POST['address'];
     $cardNumber = $_POST['cardNumber'];
@@ -76,8 +69,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->close();
 }
 
-// Закрытие соединения
-$mysqli->close();
+// Обработка редактирования клиента
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_client'])) {
+    $clientNumber = $_POST['clientNumber'];
+    $bankNumber = $_POST['bankNumber'];
+    $phone = $_POST['phone'];
+    $address = $_POST['address'];
+    $cardNumber = $_POST['cardNumber'];
+    $name = $_POST['name'];
+    $surname = $_POST['surname'];
+    $patronymic = $_POST['patronymic'];
+
+    // Обновление данных клиента
+    $stmt = $mysqli->prepare("UPDATE Client SET Phone=?, Address=?, CardNumber=?, Name=?, Surname=?, Patronymic=?, BankNumber=? WHERE ClientNumber=?");
+    $stmt->bind_param("ssssssii", $phone, $address, $cardNumber, $name, $surname, $patronymic, $bankNumber, $clientNumber);
+
+    if ($stmt->execute()) {
+        echo "Данные клиента успешно обновлены.";
+    } else {
+        echo "Ошибка при обновлении данных клиента: " . $stmt->error;
+    }
+
+    $stmt->close();
+}
+
+// Обработка удаления клиента
+if (isset($_GET['delete'])) {
+    $clientNumber = $_GET['delete'];
+    $stmt = $mysqli->prepare("DELETE FROM Client WHERE ClientNumber = ?");
+    $stmt->bind_param("i", $clientNumber);
+    $stmt->execute();
+    echo "Клиент успешно удален.";
+    $stmt->close();
+}
+
+// Получение списка клиентов
+$clients = $mysqli->query("SELECT * FROM Client");
+
 ?>
 
 <!-- HTML форма для добавления клиента -->
@@ -111,7 +139,53 @@ $mysqli->close();
         <label for="patronymic">Отчество:</label>
         <input type="text" name="patronymic"><br>
 
-        <input type="submit" value="Добавить клиента">
+        <input type="submit" name="add_client" value="Добавить клиента">
     </form>
+
+    <h2>Список клиентов</h2>
+    <table border="1">
+        <tr>
+            <th>Номер клиента</th>
+            <th>Телефон</th>
+            <th>Адрес</th>
+            <th>Номер карты</th>
+            <th>Имя</th>
+            <th>Фамилия</th>
+            <th>Отчество</th>
+            <th>Номер банка</th>
+            <th>Действия</th>
+        </tr>
+        <?php while ($client = $clients->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo $client['ClientNumber']; ?></td>
+            <td><?php echo $client['Phone']; ?></td>
+            <td><?php echo $client['Address']; ?></td>
+            <td><?php echo $client['CardNumber']; ?></td>
+            <td><?php echo $client['Name']; ?></td>
+            <td><?php echo $client['Surname']; ?></td>
+            <td><?php echo $client['Patronymic']; ?></td>
+            <td><?php echo $client['BankNumber']; ?></td>
+            <td>
+                <form method="POST" action="" style="display:inline;">
+                    <input type="hidden" name="clientNumber" value="<?php echo $client['ClientNumber']; ?>">
+                    <input type="hidden" name="bankNumber" value="<?php echo $client['BankNumber']; ?>">
+                    <input type="hidden" name="phone" value="<?php echo $client['Phone']; ?>">
+                    <input type="hidden" name="address" value="<?php echo $client['Address']; ?>">
+                    <input type="hidden" name="cardNumber" value="<?php echo $client['CardNumber']; ?>">
+                    <input type="hidden" name="name" value="<?php echo $client['Name']; ?>">
+                    <input type="hidden" name="surname" value="<?php echo $client['Surname']; ?>">
+                    <input type="hidden" name="patronymic" value="<?php echo $client['Patronymic']; ?>">
+                    <input type="submit" name="edit_client" value="Редактировать">
+                </form>
+                <a href="?delete=<?php echo $client['ClientNumber']; ?>" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
 </body>
 </html>
+
+<?php
+// Закрытие соединения
+$mysqli->close();
+?>
