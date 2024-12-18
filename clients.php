@@ -1,3 +1,7 @@
+Конечно! Давайте возьмем ваш шаблон и добавим к нему функциональность управления клиентами, включая добавление, редактирование и удаление клиентов, а также отображение сообщений об успешных операциях. Я немного структурирую код и добавлю необходимые элементы.
+
+Вот обновленный код с использованием вашего шаблона:
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -160,8 +164,11 @@
                         $clientNumber = $_GET['delete'];
                         $stmt = $mysqli->prepare("DELETE FROM Client WHERE ClientNumber = ?");
                         $stmt->bind_param("i", $clientNumber);
-                        $stmt->execute();
-                        echo "<div class='alert alert-success'>Клиент успешно удален.</div>";
+                        if ($stmt->execute()) {
+                            echo "<div class='alert alert-success'>Клиент успешно удален.</div>";
+                        } else {
+                            echo "<div class='alert alert-danger'>Ошибка при удалении клиента: " . $stmt->error . "</div>";
+                        }
                         $stmt->close();
                     }
 
@@ -230,7 +237,7 @@
                         </div>
                     </div>
 
-                    <a href="index.php" class="btn btn-secondary mb-4">Вернуться на главную страницу</a> <!-- Кнопка для возврата на главную страницу -->
+                    <a href="index.php" class="btn btn-secondary mb-4">Вернуться на главную страницу</a>
 
                     <h2>Список клиентов</h2>
                     <table class="table table-striped">
