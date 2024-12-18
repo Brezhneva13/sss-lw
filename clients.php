@@ -1,7 +1,7 @@
 <?php
 // Конфигурация базы данных
 $host = 'localhost'; 
-$db = 'transaction_sistem'; 
+$db = 'transaction_system'; // Исправлено название базы данных
 $user = 'egor'; 
 $password = '0000'; 
 
