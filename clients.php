@@ -1,120 +1,106 @@
+<?php
+// Конфигурация базы данных
+$host = 'localhost'; // Обычно localhost
+$db = 'transaction_sistem'; // Укажите нужную базу данных
+$user = 'egor'; // Имя пользователя базы данных
+$password = '0000'; // Пароль пользователя базы данных
+
+// Соединение с сервером MySQL
+$conn = new mysqli($host, $user, $password);
+
+// Проверка соединения
+if ($conn->connect_error) {
+    die("Ошибка подключения: " . $conn->connect_error);
+}
+
+// Установка кодировки UTF-8
+$conn->set_charset("utf8mb4");
+
+// Обработка добавления записи
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_client'])) {
+    $name = $conn->real_escape_string($_POST['name']);
+    $email = $conn->real_escape_string($_POST['email']);
+    
+    $sql = "INSERT INTO clients (name, email) VALUES ('$name', '$email')";
+    if ($conn->query($sql) === TRUE) {
+        echo "Запись успешно добавлена.";
+    } else {
+        echo "Ошибка: " . $conn->error;
+    }
+}
+
+// Обработка удаления записи
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+    $sql = "DELETE FROM clients WHERE id = $id";
+    
+    if ($conn->query($sql) === TRUE) {
+        echo "Запись успешно удалена.";
+    } else {
+        echo "Ошибка: " . $conn->error;
+    }
+}
+
+// Получение данных из таблицы clients
+$result = $conn->query("SELECT * FROM clients");
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>Client Management - SB Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
-    <link href="../css/styles.css" rel="stylesheet" />
-    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Управление клиентами</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
-<body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="../index.php">Admin Panel</a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="#!">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
-    </nav>
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
-                <div class="sb-sidenav-menu">
-                    <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Core</div>
-                        <a class="nav-link" href="../index.php">
-                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                            Dashboard
-                        </a>
-                        <div class="sb-sidenav-menu-heading">Management</div>
-                        <a class="nav-link" href="client.php">Клиенты</a>
-                        <a class="nav-link" href="terminal.php">Терминалы</a>
-                        <a class="nav-link" href="transaction.php">Транзакции</a>
-                        <a class="nav-link" href="attempt.php">Попытки</a>
-                        <a class="nav-link" href="client_status.php">Статусы клиентов</a>
-                        <a class="nav-link" href="card_type.php">Типы карт</a>
-                        <a class="nav-link" href="transaction_status.php">Статусы транзакций</a>
-                    </div>
-                </div>
-                <div class="sb-sidenav-footer">
-                    <div class="small">Logged in as:</div>
-                    Admin
-                </div>
-            </nav>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <header>
-                    <h1>Управление клиентами</h1>
-                </header>
+<body>
+    <div class="container mt-4">
+        <h1>Управление клиентами</h1>
+        
+        <!-- Форма для добавления клиента -->
+        <h2>Добавить клиента</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Имя</label>
+                <input type="text" name="name" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required />
+            </div>
+            <button type="submit" name="add_client" class="btn btn-primary">Добавить</button>
+        </form>
 
-                <h2>Список клиентов</h2>
-                <table border="1">
-                    <thead>
-                        <tr>
-                            <th>ID клиента</th>
-                            <th>Имя клиента</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        include '../db_connection.php';
-                        // Получение всех клиентов
-                        $clientsQuery = "SELECT * FROM Client";
-                        $clientsResult = $conn->query($clientsQuery);
-                        if ($clientsResult->num_rows > 0) {
-                            while ($row = $clientsResult->fetch_assoc()) {
-                                echo "<tr>
-                                        <td>{$row['ClientID']}</td>
-                                        <td>{$row['ClientName']}</td>
-                                      </tr>";
-                            }
-                        } else {
-                            echo "<tr><td colspan='2'>Нет клиентов</td></tr>";
-                        }
-                        ?>
-                    </tbody>
-                </table>
-
-                <h3>Добавить нового клиента</h3>
-                <form method="POST" action="client.php">
-                    <input type="text" name="client_name" placeholder="Имя клиента" required>
-                    <button type="submit" name="add_client">Добавить</button>
-                </form>
-
-                <h3>Удалить клиента</h3>
-                <form method="POST" action="client.php">
-                    <input type="number" name="client_id" placeholder="ID клиента" required>
-                    <button type="submit" name="delete_client">Удалить</button>
-                </form>
-            </main>
-
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-        </div>
+        <h2 class="mt-4">Список клиентов</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['id']); ?></td>
+                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['email']); ?></td>
+                        <td>
+                            <a href="?delete=<?php echo $row['id']; ?>" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту запись?');">Удалить</a>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="js/scripts.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+<?php
+// Закрытие соединения
+$conn->close();
+?>
