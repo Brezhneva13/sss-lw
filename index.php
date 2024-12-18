@@ -61,7 +61,6 @@
                         <li class="breadcrumb-item active">Панель управления</li>
                     </ol>
 
-                    <!-- Здесь начинается PHP-код для отображения таблиц и данных -->
                     <?php
                     // Конфигурация базы данных
                     $host = 'localhost'; // Обычно localhost
@@ -70,7 +69,7 @@
                     $password = '0000'; // Пароль пользователя базы данных
 
                     // Соединение с сервером MySQL
-                    $conn = new mysqli($host, $user, $password);
+                    $conn = new mysqli($host, $user, $password, $db);
 
                     // Проверка соединения
                     if ($conn->connect_error) {
@@ -92,22 +91,20 @@
                     ];
 
                     // Функция для отображения таблиц
-                    function getTables($conn, $db, $tableNames) {
-                        $conn->select_db($db);
-                        echo "<h2>Таблицы в базе данных: " . htmlspecialchars($db) . "</h2>";
+                    function getTables($conn, $tableNames) {
+                        echo "<h2>Таблицы в базе данных</h2>";
                         echo "<ul>";
                         $result = $conn->query("SHOW TABLES");
                         while ($row = $result->fetch_row()) {
                             $tableName = $row[0];
                             $displayName = isset($tableNames[$tableName]) ? $tableNames[$tableName] : $tableName;
-                            echo '<li><a href="?db=' . urlencode($db) . '&table=' . urlencode($tableName) . '">' . htmlspecialchars($displayName) . '</a></li>';
+                            echo '<li><a href="?table=' . urlencode($tableName) . '">' . htmlspecialchars($displayName) . '</a></li>';
                         }
                         echo "</ul>";
                     }
 
                     // Функция для отображения данных таблицы
-                    function getTableData($conn, $db, $table, $tableNames) {
-                        $conn->select_db($db);
+                    function getTableData($conn, $table, $tableNames) {
                         $displayName = isset($tableNames[$table]) ? $tableNames[$table] : $table;
                         echo "<h2>Данные таблицы: " . htmlspecialchars($displayName) . "</h2>";
 
@@ -136,6 +133,7 @@
                         foreach ($fields as $field) {
                             echo "<th>" . htmlspecialchars($field->name) . "</th>";
                         }
+                        echo "<th>Действия</th>"; // Добавляем столбец для действий
                         echo "</tr>";
 
                         // Вывод данных
@@ -144,6 +142,15 @@
                             foreach ($row as $value) {
                                 echo "<td>" . htmlspecialchars($value) . "</td>";
                             }
+                            // Кнопки для редактирования и удаления
+                            echo '<td>
+                                    <form method="post" action="">
+                                        <input type="hidden" name="table" value="' . htmlspecialchars($table) . '">
+                                        <input type="hidden" name="id" value="' . htmlspecialchars($row['id']) . '"> <!-- Предполагаем, что есть поле id -->
+                                        <button type="submit" name="edit" class="btn btn-primary btn-sm">Редактировать</button>
+                                        <button type="submit" name="delete" class="btn btn-danger btn-sm">Удалить</button>
+                                    </form>
+                                  </td>';
                             echo "</tr>";
                         }
                         echo "</table>";
@@ -156,22 +163,53 @@
                         // Вывод пагинации
                         echo "<div>";
                         for ($i = 1; $i <= $totalPages; $i++) {
-                            echo '<a href="?db=' . urlencode($db) . '&table=' . urlencode($table) . '&page=' . $i . '">' . $i . '</a> ';
+                            echo '<a href="?table=' . urlencode($table) . '&page=' . $i . '">' . $i . '</a> ';
                         }
                         echo "</div>";
+
+                        // Форма для добавления новой записи
+                        echo '<h3>Добавить новую запись</h3>';
+                        echo '<form method="post" action="">
+                                <input type="hidden" name="table" value="' . htmlspecialchars($table) . '">
+                                <input type="text" name="new_field_value" placeholder="Введите значение" required>
+                                <button type="submit" name="add" class="btn btn-success">Добавить</button>
+                              </form>';
+                    }
+
+                    // Обработка добавления записи
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $table = $_POST['table'];
+
+                        // Добавление новой записи
+                        if (isset($_POST['add'])) {
+                            $newValue = $conn->real_escape_string($_POST['new_field_value']);
+                            $conn->query("INSERT INTO " . $conn->real_escape_string($table) . " (field_name) VALUES ('$newValue')"); // Замените field_name на реальное имя поля
+                        }
+
+                        // Удаление записи
+                        if (isset($_POST['delete'])) {
+                            $id = (int)$_POST['id'];
+                            $conn->query("DELETE FROM " . $conn->real_escape_string($table) . " WHERE id = $id"); // Замените id на реальное имя поля
+                        }
+
+                        // Редактирование записи
+                        if (isset($_POST['edit'])) {
+                            $id = (int)$_POST['id'];
+                            // Здесь вы можете перенаправить на страницу редактирования или отобразить форму редактирования
+                            echo "<script>alert('Редактирование записи с ID: $id');</script>"; // Замените это на вашу логику редактирования
+                        }
                     }
 
                     // Основная логика
                     if (isset($_GET['table'])) {
-                        getTableData($conn, $db, $_GET['table'], $tableNames);
+                        getTableData($conn, $_GET['table'], $tableNames);
                     } else {
-                        getTables($conn, $db, $tableNames);
+                        getTables($conn, $tableNames);
                     }
 
                     // Закрытие соединения
                     $conn->close();
                     ?>
-                    <!-- Здесь заканчивается PHP-код -->
                 </div>
             </main>
             <footer class="py-4 bg-light mt-auto">
