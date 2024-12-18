@@ -1,35 +1,56 @@
+
+
 <?php
-// Включаем вывод ошибок для диагностики
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+include 'db_connection.php'; // Подключение к базе данных
+
+// Запросы для получения данных для карточек и графиков
+$totalBanksQuery = "SELECT COUNT(*) as total FROM Bank";
+$totalClientsQuery = "SELECT COUNT(*) as total FROM Client";
+$totalTransactionsQuery = "SELECT COUNT(*) as total FROM Transaction";
+
+$totalBanksResult = $conn->query($totalBanksQuery);
+$totalClientsResult = $conn->query($totalClientsQuery);
+$totalTransactionsResult = $conn->query($totalTransactionsQuery);
+
+$totalBanks = $totalBanksResult->fetch_assoc()['total'];
+$totalClients = $totalClientsResult->fetch_assoc()['total'];
+$totalTransactions = $totalTransactionsResult->fetch_assoc()['total'];
+
+// Получение данных для графиков (например, по транзакциям)
+$transactionDataQuery = "SELECT DATE(Date) as date, SUM(Amount) as total FROM Transaction GROUP BY DATE(Date)";
+$transactionDataResult = $conn->query($transactionDataQuery);
+
+$transactionDates = [];
+$transactionTotals = [];
+
+while ($row = $transactionDataResult->fetch_assoc()) {
+    $transactionDates[] = $row['date'];
+    $transactionTotals[] = $row['total'];
+}
+
+$conn->close(); // Закрываем соединение с базой данных
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>Transaction System Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
-    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
-<body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="index.html">Transaction System</a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-    </nav>
+<body>
     <div id="layoutSidenav">
         <div id="layoutSidenav_nav">
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
-                        <a class="nav-link" href="index.html">
-                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                            Dashboard
+                        <a class="nav-link" href="index.php">
+                            <div class="sb-nav-link-icon"><i class="fas fa-home"></i></div>
+                            Home
                         </a>
                         <a class="nav-link" href="banks.php">
                             <div class="sb-nav-link-icon"><i class="fas fa-university"></i></div>
@@ -43,481 +64,145 @@ ini_set('display_errors', 1);
                             <div class="sb-nav-link-icon"><i class="fas fa-exchange-alt"></i></div>
                             Transactions
                         </a>
-                        <!-- Добавьте другие ссылки по мере необходимости -->
                     </div>
                 </div>
             </nav>
         </div>
         <div id="layoutSidenav_content">
             <main>
-                <div class="container-fluid px-4">
-                    <h1 class="mt-4">Dashboard</h1>
+                <div class="container-fluid">
+                    <h1 class="mt-4">Welcome to the Transaction Management System</h1>
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
 
-                    <?php
-                    // Подключение к базе данных
-                    $servername = "localhost"; // Или ваш сервер базы данных
-                    $username = "egor"; // Ваше имя пользователя
-                    $password = "0000"; // Ваш пароль
-                    $dbname = "transaction_sistem"; // Название вашей базы данных
-
-                    // Создание подключения
-                    $conn = new mysqli($servername, $username, $password, $dbname);
-
-                    // Проверка подключения
-                    if ($conn->connect_error) {
-                        die("Connection failed: " . $conn->connect_error);
-                    }
-                    ?>
-
-                    <!-- Таблица Bank -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Bank Table
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card bg-primary text-white mb-4">
+                                <div class="card-body">Total Banks: <?php echo $totalBanks; ?></div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="banks.php">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Bank Number</th>
-                                        <th>Bank Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT BankNumber, BankName FROM Bank";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["BankNumber"] . "</td>
-                                                    <td>" . $row["BankName"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card bg-success text-white mb-4">
+                                <div class="card-body">Total Clients: <?php echo $totalClients; ?></div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="clients.php">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card bg-warning text-white mb-4">
+                                <div class="card-body">Total Transactions: <?php echo $totalTransactions; ?></div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="transactions.php">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Таблица Client -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Client Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Client Number</th>
-                                        <th>Phone</th>
-                                        <th>Address</th>
-                                        <th>Card Number</th>
-                                        <th>Name</th>
-                                        <th>Surname</th>
-                                        <th>Patronymic</th>
-                                        <th>Bank Number</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT ClientNumber, Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber FROM Client";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["ClientNumber"] . "</td>
-                                                    <td>" . $row["Phone"] . "</td>
-                                                    <td>" . $row["Address"] . "</td>
-                                                    <td>" . $row["CardNumber"] . "</td>
-                                                    <td>" . $row["Name"] . "</td>
-                                                    <td>" . $row["Surname"] . "</td>
-                                                    <td>" . $row["Patronymic"] . "</td>
-                                                    <td>" . $row["BankNumber"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='8'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
+                    <div class="row">
+                        <div class="col-xl-12">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-line me-1"></i>
+                                    Transaction Amount Over Time
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="transactionChart" width="100%" height="40"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Таблица Terminal -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Terminal Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Terminal Number</th>
-                                        <th>Bank Number</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT TerminalNumber, BankNumber FROM Terminal";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["TerminalNumber"] . "</td>
-                                                    <td>" . $row["BankNumber"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
+                    <div class="row">
+                        <div class="col-xl-12">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-table me-1"></i>
+                                    Transaction Data
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                        <thead>
+                                            <tr>
+                                                <th>Transaction Number</th>
+                                                <th>Date</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            // Получение данных из таблицы Transaction для отображения в таблице
+                                            $transactionQuery = "SELECT * FROM Transaction";
+                                            $transactionResult = $conn->query($transactionQuery);
+
+                                            if ($transactionResult->num_rows > 0) {
+                                                while ($row = $transactionResult->fetch_assoc()) {
+                                                    echo "<tr>
+                                                            <td>{$row['TransactionNumber']}</td>
+                                                            <td>{$row['Date']}</td>
+                                                            <td>{$row['Amount']}</td>
+                                                          </tr>";
+                                                }
+                                            } else {
+                                                echo "<tr><td colspan='3'>No transactions found</td></tr>";
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Таблица Transaction -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Transaction Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Transaction Number</th>
-                                        <th>Date</th>
-                                        <th>Amount</th>
-                                        <th>Client Number</th>
-                                        <th>Terminal Number</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT TransactionNumber, Date, Amount, ClientNumber, TerminalNumber FROM Transaction";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["TransactionNumber"] . "</td>
-                                                    <td>" . $row["Date"] . "</td>
-                                                    <td>" . $row["Amount"] . "</td>
-                                                    <td>" . $row["ClientNumber"] . "</td>
-                                                    <td>" . $row["TerminalNumber"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='5'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица Attempt -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Attempt Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Attempt Number</th>
-                                        <th>Date</th>
-                                        <th>Transaction Number</th>
-                                        <th>Error Description</th>
-                                        <th>Error Code</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT AttemptNumber, Date, TransactionNumber, ErrorDescription, ErrorCode FROM Attempt";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["AttemptNumber"] . "</td>
-                                                    <td>" . $row["Date"] . "</td>
-                                                    <td>" . $row["TransactionNumber"] . "</td>
-                                                    <td>" . $row["ErrorDescription"] . "</td>
-                                                    <td>" . $row["ErrorCode"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='5'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица ClientStatus -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Client Status Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Client Status ID</th>
-                                        <th>Client Status Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT ClientStatusID, ClientStatusName FROM ClientStatus";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["ClientStatusID"] . "</td>
-                                                    <td>" . $row["ClientStatusName"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица CardType -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Card Type Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Card Type ID</th>
-                                        <th>Card Type Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT CardTypeID, CardTypeName FROM CardType";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["CardTypeID"] . "</td>
-                                                    <td>" . $row["CardTypeName"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица TransactionStatus -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Transaction Status Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Transaction Status ID</th>
-                                        <th>Transaction Status Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT TransactionStatusID, TransactionStatusName FROM TransactionStatus";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["TransactionStatusID"] . "</td>
-                                                    <td>" . $row["TransactionStatusName"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица Client_CardType -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Client Card Type Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Client Number</th>
-                                        <th>Card Type ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT ClientNumber, CardTypeID FROM Client_CardType";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["ClientNumber"] . "</td>
-                                                    <td>" . $row["CardTypeID"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица Transaction_TransactionStatus -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Transaction Transaction Status Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Transaction Number</th>
-                                        <th>Transaction Status ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT TransactionNumber, TransactionStatusID FROM Transaction_TransactionStatus";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["TransactionNumber"] . "</td>
-                                                    <td>" . $row["TransactionStatusID"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица Transaction_Interval -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Transaction Interval Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Transaction Number</th>
-                                        <th>Interval ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT TransactionNumber, IntervalID FROM Transaction_Interval";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["TransactionNumber"] . "</td>
-                                                    <td>" . $row["IntervalID"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Таблица Interval -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <i class="fas fa-table me-1"></i>
-                            Interval Table
-                        </div>
-                        <div class="card-body">
-                            <table id="datatablesSimple">
-                                <thead>
-                                    <tr>
-                                        <th>Interval ID</th>
-                                        <th>Interval Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $sql = "SELECT IntervalID, IntervalValue FROM Interval";
-                                    $result = $conn->query($sql);
-                                    if ($result->num_rows > 0) {
-                                        while($row = $result->fetch_assoc()) {
-                                            echo "<tr>
-                                                    <td>" . $row["IntervalID"] . "</td>
-                                                    <td>" . $row["IntervalValue"] . "</td>
-                                                  </tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='2'>No results found</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                 </div>
             </main>
             <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
+                <div class="container-fluid">
                     <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div class="text-muted">© 2023 Your Company</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
                     </div>
                 </div>
             </footer>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
     <script src="js/scripts.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
-    <script src="js/datatables-simple-demo.js"></script>
+    <script>
+        // График транзакций
+        const ctx = document.getElementById('transactionChart').getContext('2d');
+        const transactionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($transactionDates); ?>,
+                datasets: [{
+                    label: 'Total Amount',
+                    data: <?php echo json_encode($transactionTotals); ?>,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
