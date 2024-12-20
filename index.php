@@ -1,5 +1,3 @@
-Конечно! Давайте добавим указанный вами код для навигационной панели и бокового меню в файл index.php. Я интегрирую ваши изменения, чтобы сохранить единый стиль и структуру. Вот обновлённый код:
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -39,6 +37,10 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Панель управления
                         </a>
+                        <a class="nav-link" href="charts.php">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                            Графики
+                        </a>
                         <div class="sb-sidenav-menu-heading">Интерфейс</div>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                             <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
@@ -51,13 +53,23 @@
                                 <a class="nav-link" href="layout-sidenav-light.html">Светлая боковая панель</a>
                             </nav>
                         </div>
-                        <a class="nav-link" href="pages/client.php">Клиенты</a>
-                        <a class="nav-link" href="pages/terminal.php">Терминалы</a>
-                        <a class="nav-link" href="pages/transaction.php">Транзакции</a>
-                        <a class="nav-link" href="pages/attempt.php">Попытки</a>
-                        <a class="nav-link" href="pages/client_status.php">Статусы клиентов</a>
-                        <a class="nav-link" href="pages/card_type.php">Типы карт</a>
-                        <a class="nav-link" href="pages/transaction_status.php">Статусы транзакций</a>
+                        <div class="sb-sidenav-menu-heading">Редактирование таблиц</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseTables" aria-expanded="false" aria-controls="collapseTables">
+                            <div class="sb-nav-link-icon"><i class="fas fa-edit"></i></div>
+                            Редактирование таблиц
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseTables" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="pages/client.php">Клиенты</a>
+                                <a class="nav-link" href="pages/terminal.php">Терминалы</a>
+                                <a class="nav-link" href="pages/transaction.php">Транзакции</a>
+                                <a class="nav-link" href="pages/attempt.php">Попытки</a>
+                                <a class="nav-link" href="pages/client_status.php">Статусы клиентов</a>
+                                <a class="nav-link" href="pages/card_type.php">Типы карт</a>
+                                <a class="nav-link" href="pages/transaction_status.php">Статусы транзакций</a>
+                            </nav>
+                        </div>
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">
@@ -74,7 +86,7 @@
                         <li class="breadcrumb-item active">Панель управления</li>
                     </ol>
 
-                    <!-- Здесь начинается PHP-код для отображения таблиц и данных -->
+                    <!-- Здесь начинается PHP-код для работы с базой данных -->
                     <?php
                     // Конфигурация базы данных
                     $host = 'localhost'; // Обычно localhost
@@ -107,14 +119,21 @@
                     // Функция для отображения таблиц
                     function getTables($conn, $tableNames) {
                         echo "<h2>Таблицы в базе данных</h2>";
-                        echo "<ul>";
+                        echo "<div class='row'>";
                         $result = $conn->query("SHOW TABLES");
                         while ($row = $result->fetch_row()) {
                             $tableName = $row[0];
                             $displayName = isset($tableNames[$tableName]) ? $tableNames[$tableName] : $tableName;
-                            echo '<li><a href="?table=' . urlencode($tableName) . '">' . htmlspecialchars($displayName) . '</a></li>';
+                            echo "<div class='col-md-4 mb-4'>
+                                    <div class='card'>
+                                        <div class='card-body'>
+                                            <h5 class='card-title'>" . htmlspecialchars($displayName) . "</h5>
+                                            <a href='?table=" . urlencode($tableName) . "' class='btn btn-primary'>Посмотреть</a>
+                                        </div>
+                                    </div>
+                                  </div>";
                         }
-                        echo "</ul>";
+                        echo "</div>";
                     }
 
                     // Функция для отображения данных таблицы
