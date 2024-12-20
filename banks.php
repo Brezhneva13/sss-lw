@@ -1,3 +1,94 @@
+<?php
+session_start(); // Инициализация сессий
+
+// Подключение к базе данных
+$host = 'localhost'; // или ваш хост
+$user = 'root'; // ваш пользователь
+$password = ''; // ваш пароль
+$database = 'transaction_system'; // имя базы данных
+
+$mysqli = new mysqli($host, $user, $password, $database);
+
+// Проверка соединения
+if ($mysqli->connect_error) {
+    die("Ошибка подключения: " . $mysqli->connect_error);
+}
+
+// Создание таблицы Bank, если она не существует
+$createBankTable = "
+CREATE TABLE IF NOT EXISTS Bank (
+    BankNumber INT AUTO_INCREMENT PRIMARY KEY,
+    BankName VARCHAR(100) NOT NULL
+)";
+$mysqli->query($createBankTable);
+
+// Обработка добавления банка
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_bank'])) {
+    $bankName = $_POST['bankName'];
+
+    // Добавление банка
+    $stmt = $mysqli->prepare("INSERT INTO Bank (BankName) VALUES (?)");
+    $stmt->bind_param("s", $bankName);
+
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Банк успешно добавлен.";
+    } else {
+        $_SESSION['error'] = "Ошибка при добавлении банка: " . $stmt->error;
+    }
+
+    $stmt->close();
+}
+
+// Обработка редактирования банка
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_bank'])) {
+    $bankNumber = $_POST['bankNumber'];
+    $bankName = $_POST['bankName'];
+
+    // Обновление данных банка
+    $stmt = $mysqli->prepare("UPDATE Bank SET BankName=? WHERE BankNumber=?");
+    $stmt->bind_param("si", $bankName, $bankNumber);
+
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Данные банка успешно обновлены.";
+    } else {
+        $_SESSION['error'] = "Ошибка при обновлении данных банка: " . $stmt->error;
+    }
+
+    $stmt->close();
+}
+
+// Обработка удаления банка
+if (isset($_GET['delete'])) {
+    $bankNumber = $_GET['delete'];
+    $stmt = $mysqli->prepare("DELETE FROM Bank WHERE BankNumber = ?");
+    $stmt->bind_param("i", $bankNumber);
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Банк успешно удален.";
+    } else {
+        $_SESSION['error'] = "Ошибка при удалении банка: " . $stmt->error;
+    }
+    $stmt->close();
+
+    // Перенаправление на ту же страницу после удаления
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit(); // Завершение скрипта после перенаправления
+}
+
+// Получение списка банков
+$banks = $mysqli->query("SELECT * FROM Bank");
+
+// Проверка, нужно ли редактировать банк
+$editBank = null;
+if (isset($_GET['edit'])) {
+    $bankNumber = $_GET['edit'];
+    $stmt = $mysqli->prepare("SELECT * FROM Bank WHERE BankNumber = ?");
+    $stmt->bind_param("i", $bankNumber);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $editBank = $result->fetch_assoc();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -39,7 +130,7 @@
                         </a>
                         <div class="sb-sidenav-menu-heading">Управление</div>
                         <a class="nav-link" href="pages/client.php">Клиенты</a>
-                        <a class="nav-link" href="pages/bank.php">Банки</a> <!-- Ссылка на управление банками -->
+                        <a class="nav-link" href="pages/bank.php">Банки</a>
                         <a class="nav-link" href="pages/terminal.php">Терминалы</a>
                         <a class="nav-link" href="pages/transaction.php">Транзакции</a>
                         <a class="nav-link" href="pages/attempt.php">Попытки</a>
@@ -62,88 +153,16 @@
                         <li class="breadcrumb-item active">Банки</li>
                     </ol>
 
+                    <!-- Вывод сообщений об успехе или ошибке -->
                     <?php
-                    // Подключение к базе данных
-                    $host = 'localhost'; // или ваш хост
-                    $user = 'root'; // ваш пользователь
-                    $password = ''; // ваш пароль
-                    $database = 'transaction_system'; // имя базы данных
-
-                    $mysqli = new mysqli($host, $user, $password, $database);
-
-                    // Проверка соединения
-                    if ($mysqli->connect_error) {
-                        die("Ошибка подключения: " . $mysqli->connect_error);
+                    if (isset($_SESSION['message'])) {
+                        echo "<div class='alert alert-success'>" . $_SESSION['message'] . "</div>";
+                        unset($_SESSION['message']); // Удаляем сообщение после отображения
                     }
 
-                    // Создание таблицы Bank, если она не существует
-                    $createBankTable = "
-                    CREATE TABLE IF NOT EXISTS Bank (
-                        BankNumber INT AUTO_INCREMENT PRIMARY KEY,
-                        BankName VARCHAR(100) NOT NULL
-                    )";
-                    $mysqli->query($createBankTable);
-
-                    // Обработка добавления банка
-                    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_bank'])) {
-                        $bankName = $_POST['bankName'];
-
-                        // Добавление банка
-                        $stmt = $mysqli->prepare("INSERT INTO Bank (BankName) VALUES (?)");
-                        $stmt->bind_param("s", $bankName);
-
-                        if ($stmt->execute()) {
-                            echo "<div class='alert alert-success'>Банк успешно добавлен.</div>";
-                        } else {
-                            echo "<div class='alert alert-danger'>Ошибка при добавлении банка: " . $stmt->error . "</div>";
-                        }
-
-                        $stmt->close();
-                    }
-
-                    // Обработка редактирования банка
-                    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_bank'])) {
-                        $bankNumber = $_POST['bankNumber'];
-                        $bankName = $_POST['bankName'];
-
-                        // Обновление данных банка
-                        $stmt = $mysqli->prepare("UPDATE Bank SET BankName=? WHERE BankNumber=?");
-                        $stmt->bind_param("si", $bankName, $bankNumber);
-
-                        if ($stmt->execute()) {
-                            echo "<div class='alert alert-success'>Данные банка успешно обновлены.</div>";
-                        } else {
-                            echo "<div class='alert alert-danger'>Ошибка при обновлении данных банка: " . $stmt->error . "</div>";
-                        }
-
-                        $stmt->close();
-                    }
-
-                    // Обработка удаления банка
-                    if (isset($_GET['delete'])) {
-                        $bankNumber = $_GET['delete'];
-                        $stmt = $mysqli->prepare("DELETE FROM Bank WHERE BankNumber = ?");
-                        $stmt->bind_param("i", $bankNumber);
-                        if ($stmt->execute()) {
-                            echo "<div class='alert alert-success'>Банк успешно удален.</div>";
-                        } else {
-                            echo "<div class='alert alert-danger'>Ошибка при удалении банка: " . $stmt->error . "</div>";
-                        }
-                        $stmt->close();
-                    }
-
-                    // Получение списка банков
-                    $banks = $mysqli->query("SELECT * FROM Bank");
-
-                    // Проверка, нужно ли редактировать банк
-                    $editBank = null;
-                    if (isset($_GET['edit'])) {
-                        $bankNumber = $_GET['edit'];
-                        $stmt = $mysqli->prepare("SELECT * FROM Bank WHERE BankNumber = ?");
-                        $stmt->bind_param("i", $bankNumber);
-                        $stmt->execute();
-                        $result = $stmt->get_result();
-                        $editBank = $result->fetch_assoc();
+                    if (isset($_SESSION['error'])) {
+                        echo "<div class='alert alert-danger'>" . $_SESSION['error'] . "</div>";
+                        unset($_SESSION['error']); // Удаляем сообщение после отображения
                     }
                     ?>
 
