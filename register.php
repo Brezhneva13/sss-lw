@@ -32,7 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Выполнение запроса и проверка на ошибки
     if ($stmt->execute()) {
-        echo "Пользователь успешно зарегистрирован!";
+        // Перенаправление на страницу входа после успешной регистрации
+        header("Location: login.php");
+        exit(); // Завершение скрипта после перенаправления
     } else {
         echo "Ошибка: " . $stmt->error;
     }
@@ -54,4 +56,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <label for="username">Имя пользователя:</label>
         <input type="text" id="username" name="username" required>
         <br>
-        <
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <br>
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" required>
+        <br>
+        <input type="submit" value="Зарегистрироваться">
+    </form>
+</body>
+</html>
+
+<?php
+// Закрытие соединения
+$conn->close();
+?>
