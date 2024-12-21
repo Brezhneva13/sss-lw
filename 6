@@ -1,0 +1,25 @@
+ // Обработка удаления клиента
+                    if (isset($_GET['delete'])) {
+                        $clientNumber = $_GET['delete'];
+                        $stmt = $mysqli->prepare("DELETE FROM Client WHERE ClientNumber = ?");
+                        $stmt->bind_param("i", $clientNumber);
+                        if ($stmt->execute()) {
+                            echo "<div class='alert alert-success'>Клиент успешно удален.</div>";
+                        } else {
+                            echo "<div class='alert alert-danger'>Ошибка при удалении клиента: " . $st>
+                        }
+                        $stmt->close();
+                    }
+// Обработка удаления типа карты
+                    if (isset($_GET['delete'])) {
+                        $cardTypeID = $_GET['delete'];
+                        $stmt = $mysqli->prepare("DELETE FROM CardType WHERE CardTypeID = ?");
+                        $stmt->bind_param("i", $cardTypeID);
+                        if ($stmt->execute()) {
+                            echo "<div class='alert alert-success'>Тип карты успешно удален.</div>";
+                        } else {
+                            echo "<div class='alert alert-danger'>Ошибка при удалении типа карты: " . >
+                        }
+                        $stmt->close();
+                    }
+
