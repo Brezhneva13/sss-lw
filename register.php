@@ -1,104 +1,99 @@
-<?php
-include 'includes/db.php';
-include 'includes/auth.php';
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-
-    if (register($email, $password)) {
-        header('Location: login.php');
-        exit;
-    } else {
-        $error = "Ошибка регистрации. Возможно, этот email уже используется.";
-    }
-}
-?>
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Register - SB Admin</title>
-        <link href="css/styles.css" rel="stylesheet" />
-        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
-    </head>
-    <body class="bg-primary">
-        <div id="layoutAuthentication">
-            <div id="layoutAuthentication_content">
-                <main>
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="col-lg-7">
-                                <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                    <div class="card-header"><h3 class="text-center font-weight-light my-4">Create Account</h3></div>
-                                    <div class="card-body">
-                                        <form>
-                                            <div class="row mb-3">
-                                                <div class="col-md-6">
-                                                    <div class="form-floating mb-3 mb-md-0">
-                                                        <input class="form-control" id="inputFirstName" type="text" placeholder="Enter your first name" />
-                                                        <label for="inputFirstName">First name</label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-floating">
-                                                        <input class="form-control" id="inputLastName" type="text" placeholder="Enter your last name" />
-                                                        <label for="inputLastName">Last name</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="form-floating mb-3">
-                                                <input class="form-control" id="inputEmail" type="email" placeholder="name@example.com" />
-                                                <label for="inputEmail">Email address</label>
-                                            </div>
-                                            <div class="row mb-3">
-                                                <div class="col-md-6">
-                                                    <div class="form-floating mb-3 mb-md-0">
-                                                        <input class="form-control" id="inputPassword" type="password" placeholder="Create a password" />
-                                                        <label for="inputPassword">Password</label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-floating mb-3 mb-md-0">
-                                                        <input class="form-control" id="inputPasswordConfirm" type="password" placeholder="Confirm password" />
-                                                        <label for="inputPasswordConfirm">Confirm Password</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mt-4 mb-0">
-                                                <div class="d-grid"><a class="btn btn-primary btn-block" href="login.html">Create Account</a></div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                    <div class="card-footer text-center py-3">
-                                        <div class="small"><a href="login.html">Have an account? Go to login</a></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </main>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Регистрация</title>
+    <link href="css/styles.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <h2>Регистрация</h2>
+        <?php
+        // Подключение к базе данных (замените на свои данные)
+        $servername = "localhost";
+        $username = "your_db_username";
+        $password = "your_db_password";
+        $dbname = "your_db_name";
+
+        // Создаем соединение
+        $conn = new mysqli($servername, $username, $password, $dbname);
+
+        // Проверяем соединение
+        if ($conn->connect_error) {
+            die("Ошибка подключения к БД: " . $conn->connect_error);
+        }
+
+        $message = ""; // Переменная для сообщений
+
+        // Проверка, была ли отправлена форма
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            // Получение данных из формы
+            $username = $_POST["username"];
+            $email = $_POST["email"];
+            $password = $_POST["password"];
+            $confirm_password = $_POST["confirm_password"];
+
+            // Проверка на совпадение паролей
+            if ($password != $confirm_password) {
+                $message = "Пароли не совпадают.";
+            } else {
+                // Хеширование пароля (очень важно для безопасности)
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                // SQL-запрос для добавления нового пользователя
+                 $sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+
+                 $stmt = $conn->prepare($sql);
+                  if($stmt === false) {
+                     $message = "Ошибка подготовки запроса: " . $conn->error;
+                  } else {
+                     $stmt->bind_param("sss", $username, $email, $hashed_password);
+                    if ($stmt->execute() ) {
+                        $message = "Регистрация прошла успешно!";
+                        header("Location: index.html");
+                        exit();
+                     } else {
+                     $message = "Ошибка при регистрации: " . $stmt->error;
+                     }
+                  }
+            }
+        }
+
+        if (!empty($message)) {
+             echo "<div class='message'>" . $message . "</div>";
+        }
+
+        ?>
+        <form method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Логин</label>
+                <input type="text" class="form-control" id="username" name="username" required>
             </div>
-            <div id="layoutAuthentication_footer">
-                <footer class="py-4 bg-light mt-auto">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                            <div>
-                                <a href="#">Privacy Policy</a>
-                                &middot;
-                                <a href="#">Terms &amp; Conditions</a>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
             </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Подтвердите пароль</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+        </form>
+         <div class="mt-3">
+           <button class="btn btn-link" onclick="location.href='index.html'">Вход</button>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="js/scripts.js"></script>
-    </body>
+    </div>
+</body>
 </html>
+
+<?php
+    if (isset($conn)){
+        $conn->close();
+    }
+
+?>
