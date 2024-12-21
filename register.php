@@ -65,7 +65,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <input type="submit" value="Зарегистрироваться">
     </form>
 </body>
-</html>
+</html>Имя пользователя 	Имя хоста 	Тип 	Привилегии 	Grant 	Действие
+	admin 	localhost 	глобальный 	ALL PRIVILEGES 	Нет 		Экспорт Экспорт
+	mysql 	localhost 	глобальный 	ALL PRIVILEGES 	Да 		Экспорт Экспорт
+	root 	localhost 	глобальный 	ALL PRIVILEGES 	Да 
 
 <?php
 // Закрытие соединения
