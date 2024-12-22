@@ -126,14 +126,13 @@
                         $stmt->bind_param("i", $clientNumber);
                         $stmt->execute();
                         $stmt->close();
-                        // Перенаправление на ту же страницу для обновления
                         header("Location: " . $_SERVER['PHP_SELF']);
                         exit();
                     }
 
                     // Обработка добавления клиента
                     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_client'])) {
-                        $clientNumber = $_POST['clientNumber']; // Получаем номер клиента
+                        $clientNumber = $_POST['clientNumber'];
                         $bankNumber = $_POST['bankNumber'];
                         $phone = $_POST['phone'];
                         $address = $_POST['address'];
@@ -211,7 +210,7 @@
 
                         // Обновление информации о клиенте
                         $stmt = $mysqli->prepare("UPDATE Client SET Phone = ?, Address = ?, CardNumber = ?, Name = ?, Surname = ?, Patronymic = ?, BankNumber = ? WHERE ClientNumber = ?");
-                        $stmt->bind_param("sssssiii", $phone, $address, $cardNumber, $name, $surname, $patronymic, $bankNumber, $clientNumber);
+                        $stmt->bind_param("sssssiiii", $phone, $address, $cardNumber, $name, $surname, $patronymic, $bankNumber, $clientNumber);
                         
                         if ($stmt->execute()) {
                             echo "<div class='alert alert-success'>Клиент успешно обновлен.</div>";
@@ -220,7 +219,6 @@
                         }
 
                         $stmt->close();
-                        // Перенаправление на ту же страницу для обновления
                         header("Location: " . $_SERVER['PHP_SELF']);
                         exit();
                     }
@@ -241,7 +239,7 @@
                             <form method="POST" action="">
                                 <div class="mb-3">
                                     <label for="clientNumber" class="form-label">Номер клиента:</label>
-                                    <input type="text" class="form-control" name="clientNumber" value="<?php echo $editClient['ClientNumber'] ?? ''; ?>" required pattern="^[0-9]+$" title="Номер клиента должен содержать только цифры." inputmode="numeric" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                    <input type="text" class="form-control" name="clientNumber" value="<?php echo $editClient['ClientNumber'] ?? ''; ?>" required pattern="^[0-9]+$" title="Номер клиента должен содержать только цифры." inputmode="numeric" maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
@@ -258,7 +256,7 @@
 
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Телефон:</label>
-                                    <input type="text" class="form-control" name="phone" value="<?php echo $editClient['Phone'] ?? ''; ?>" required pattern="^[0-9]{8,20}$" title="Неверный формат телефона. Должно быть от 8 до 20 цифр." inputmode="numeric" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                    <input type="text" class="form-control" name="phone" value="<?php echo $editClient['Phone'] ?? ''; ?>" required pattern="^[0-9]{8,20}$" title="Неверный формат телефона. Должно быть от 8 до 20 цифр." inputmode="numeric" maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
@@ -268,7 +266,7 @@
 
                                 <div class="mb-3">
                                     <label for="cardNumber" class="form-label">Номер карты:</label>
-                                    <input type="text" class="form-control" name="cardNumber" value="<?php echo $editClient['CardNumber'] ?? ''; ?>" required pattern="^[0-9]{8,20}$" title="Неверный формат номера карты. Должно быть от 8 до 20 цифр." inputmode="numeric" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                    <input type="text" class="form-control" name="cardNumber" value="<?php echo $editClient['CardNumber'] ?? ''; ?>" required pattern="^[0-9]{8,20}$" title="Неверный формат номера карты. Должно быть от 8 до 20 цифр." inputmode="numeric" maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
