@@ -1,98 +1,91 @@
-CREATE DATABASE transaction_system;
-USE transaction_system;
-
 CREATE TABLE Bank (
-    BankNumber INT AUTO_INCREMENT PRIMARY KEY,
-    BankName VARCHAR(100) NOT NULL
+    BankNumber INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор банка
+    BankName VARCHAR(100) NOT NULL UNIQUE       -- Уникальное имя банка
 );
 
-CREATE TABLE Client (
-    ClientNumber INT AUTO_INCREMENT PRIMARY KEY,
-    Phone VARCHAR(20) NOT NULL,
-    Address VARCHAR(100),
-    CardNumber VARCHAR(20),
-    Name VARCHAR(50) NOT NULL,
-    Surname VARCHAR(50) NOT NULL,
-    Patronymic VARCHAR(50),
-    BankNumber INT,
-    FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber)
-);
-
-CREATE TABLE Terminal (
-    TerminalNumber INT AUTO_INCREMENT PRIMARY KEY,
-    BankNumber INT,
-    FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber)
-);
-
-CREATE TABLE Transaction (
-    TransactionNumber INT AUTO_INCREMENT PRIMARY KEY,
-    Date DATE NOT NULL,
-    Amount DECIMAL(10,2) NOT NULL,
-    ClientNumber INT,
-    TerminalNumber INT,
-    FOREIGN KEY (ClientNumber) REFERENCES Client(ClientNumber),
-    FOREIGN KEY (TerminalNumber) REFERENCES Terminal(TerminalNumber)
-);
-
-CREATE TABLE Attempt (
-    AttemptNumber INT AUTO_INCREMENT PRIMARY KEY,
-    Date DATE NOT NULL,
-    TransactionNumber INT,
-    ErrorDescription VARCHAR(255),
-    ErrorCode VARCHAR(20),
-    FOREIGN KEY (TransactionNumber) REFERENCES Transaction(TransactionNumber)
-);
-
+-- Создание таблицы ClientStatus
 CREATE TABLE ClientStatus (
-    ClientStatusID INT AUTO_INCREMENT PRIMARY KEY,
-    ClientStatusName VARCHAR(50) NOT NULL
+    ClientStatusID INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор статуса клиента
+    ClientStatusName VARCHAR(50) NOT NULL UNIQUE     -- Уникальное название статуса клиента
 );
 
-CREATE TABLE CardType (
-    CardTypeID INT AUTO_INCREMENT PRIMARY KEY,
-    CardTypeName VARCHAR(50) NOT NULL
+-- Создание таблицы Client
+CREATE TABLE Client (
+    ClientNumber INT AUTO_INCREMENT PRIMARY KEY,      -- Уникальный идентификатор клиента
+    Phone VARCHAR(20) NOT NULL UNIQUE,                -- Уникальный номер телефона клиента
+    Address VARCHAR(100),                              -- Адрес клиента
+    CardNumber VARCHAR(20) UNIQUE,                    -- Уникальный номер карты клиента
+    Name VARCHAR(50) NOT NULL,                         -- Имя клиента
+    Surname VARCHAR(50) NOT NULL,                      -- Фамилия клиента
+    Patronymic VARCHAR(50),                            -- Отчество клиента
+    BankNumber INT,                                    -- Идентификатор банка
+    ClientStatusID INT,                               -- Идентификатор статуса клиента
+    FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber),  -- Внешний ключ на таблицу Bank
+    FOREIGN KEY (ClientStatusID) REFERENCES ClientStatus(ClientStatusID)  -- Внешний ключ на таблицу ClientStatus
 );
 
+-- Создание таблицы Terminal
+CREATE TABLE Terminal (
+    TerminalNumber INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор терминала
+    BankNumber INT,                                  -- Идентификатор банка
+    FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber)  -- Внешний ключ на таблицу Bank
+);
+
+-- Создание таблицы TransactionStatus
 CREATE TABLE TransactionStatus (
-    TransactionStatusID INT AUTO_INCREMENT PRIMARY KEY,
-    TransactionStatusName VARCHAR(50) NOT NULL
+    TransactionStatusID INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор статуса транзакции
+    TransactionStatusName VARCHAR(50) NOT NULL UNIQUE     -- Уникальное название статуса транзакции
 );
 
+-- Создание таблицы Transaction
+CREATE TABLE Transaction (
+    TransactionNumber INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор транзакции
+    Date DATE NOT NULL,                                 -- Дата транзакции
+    Amount DECIMAL(10,2) NOT NULL,                     -- Сумма транзакции
+    ClientNumber INT,                                   -- Идентификатор клиента
+    TerminalNumber INT,                                 -- Идентификатор терминала
+    TransactionStatusID INT,                            -- Идентификатор статуса транзакции
+    FOREIGN KEY (ClientNumber) REFERENCES Client(ClientNumber),  -- Внешний ключ на таблицу Client
+    FOREIGN KEY (TerminalNumber) REFERENCES Terminal(TerminalNumber),  -- Внешний ключ на таблицу Terminal
+    FOREIGN KEY (TransactionStatusID) REFERENCES TransactionStatus(TransactionStatusID)  -- Внешний ключ на таблицу TransactionStatus
+);
+
+-- Создание таблицы Attempt
+CREATE TABLE Attempt (
+    AttemptNumber INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор попытки
+    Date DATE NOT NULL,                             -- Дата попытки
+    TransactionNumber INT,                          -- Идентификатор транзакции
+    ErrorDescription VARCHAR(255),                  -- Описание ошибки
+    ErrorCode VARCHAR(20),                          -- Код ошибки
+    FOREIGN KEY (TransactionNumber) REFERENCES Transaction(TransactionNumber)  -- Внешний ключ на таблицу Transaction
+);
+
+-- Создание таблицы CardType
+CREATE TABLE CardType (
+    CardTypeID INT AUTO_INCREMENT PRIMARY KEY,      -- Уникальный идентификатор типа карты
+    CardTypeName VARCHAR(50) NOT NULL UNIQUE        -- Уникальное название типа карты
+);
+
+-- Создание промежуточной таблицы для связи клиентов и типов карт
 CREATE TABLE Client_CardType (
-    ClientNumber INT,
-    CardTypeID INT,
-    PRIMARY KEY (ClientNumber, CardTypeID),
-    FOREIGN KEY (ClientNumber) REFERENCES Client(ClientNumber),
-    FOREIGN KEY (CardTypeID) REFERENCES CardType(CardTypeID)
+    ClientNumber INT,                                -- Идентификатор клиента
+    CardTypeID INT,                                  -- Идентификатор типа карты
+    PRIMARY KEY (ClientNumber, CardTypeID),         -- Составной первичный ключ
+    FOREIGN KEY (ClientNumber) REFERENCES Client(ClientNumber),  -- Внешний ключ на таблицу Client
+    FOREIGN KEY (CardTypeID) REFERENCES CardType(CardTypeID)  -- Внешний ключ на таблицу CardType
 );
 
-CREATE TABLE Transaction_TransactionStatus (
-    TransactionNumber INT,
-    TransactionStatusID INT,
-    PRIMARY KEY (TransactionNumber, TransactionStatusID),
-    FOREIGN KEY (TransactionNumber) REFERENCES Transaction(TransactionNumber),
-    FOREIGN KEY (TransactionStatusID) REFERENCES TransactionStatus(TransactionStatusID)
+-- Создание таблицы TransactionInterval
+CREATE TABLE TransactionInterval (
+    IntervalID INT AUTO_INCREMENT PRIMARY KEY,       -- Уникальный идентификатор интервала транзакции
+    IntervalValue INT NOT NULL                       -- Значение интервала
 );
 
-CREATE TABLE Interval (
-    IntervalID INT AUTO_INCREMENT PRIMARY KEY,
-    IntervalValue INT NOT NULL
-);
-
+-- Создание промежуточной таблицы для связи транзакций и интервалов
 CREATE TABLE Transaction_Interval (
-    TransactionNumber INT,
-    IntervalID INT,
-    PRIMARY KEY (TransactionNumber, IntervalID),
-    FOREIGN KEY (TransactionNumber) REFERENCES Transaction(TransactionNumber),
-    FOREIGN KEY (IntervalID) REFERENCES Interval(IntervalID)
+    TransactionNumber INT,                           -- Идентификатор транзакции
+    IntervalID INT,                                  -- Идентификатор интервала
+    PRIMARY KEY (TransactionNumber, IntervalID),    -- Составной первичный ключ
+    FOREIGN KEY (TransactionNumber) REFERENCES Transaction(TransactionNumber),  -- Внешний ключ на таблицу Transaction
+    FOREIGN KEY (IntervalID) REFERENCES TransactionInterval(IntervalID)  -- Внешний ключ на таблицу TransactionInterval
 );
-
--- Добавление ограничений для статуса клиента 
-ALTER TABLE Client
-ADD Status VARCHAR(50) NOT NULL,
-ADD CONSTRAINT CK_ClientStatus CHECK (Status IN ('Активный', 'Задолженность'));
-
--- Добавление ограничений для статуса транзакции 
-ALTER TABLE Transaction
-ADD Status VARCHAR(50) NOT NULL,
-ADD CONSTRAINT CK_TransactionStatus CHECK (Status IN ('В процессе обработки', 'Успешно', 'Отказано'));
