@@ -43,7 +43,8 @@
                         <a class="nav-link" href="transaction.php">Транзакции</a>
                         <a class="nav-link" href="attempt.php">Попытки</a>
                         <a class="nav-link" href="card_type.php">Типы карт</a>
-                        <a class="nav-link" href="transaction_status.php">Статусы транзакций</a>
+                        <a class="nav-link" href="bank.php">Банк</a>
+			 <a class="nav-link" href="transaction_status.php">Статусы транзакций</a>
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">
@@ -60,52 +61,179 @@
                         <li class="breadcrumb-item active">Клиенты</li>
                     </ol>
 
-                    
+                    <?php
+                    // Подключение к базе данных
+                    $host = 'localhost'; // или ваш хост
+                    $user = 'admin'; // ваш пользователь
+                    $password = '0000'; // ваш пароль
+                    $database = 'sistem'; // имя базы данных
+
+                    $mysqli = new mysqli($host, $user, $password, $database);
+
+                    // Проверка соединения
+                    if ($mysqli->connect_error) {
+                        die("Ошибка подключения: " . $mysqli->connect_error);
+                    }
+
+                    // Создание таблицы Bank, если она не существует
+                    $createBankTable = "
+                    CREATE TABLE IF NOT EXISTS Bank (
+                        BankNumber INT AUTO_INCREMENT PRIMARY KEY,
+                        BankName VARCHAR(100) NOT NULL UNIQUE
+                    )";
+                    $mysqli->query($createBankTable);
+
+                    // Создание таблицы ClientStatus, если она не существует
+                    $createClientStatusTable = "
+                    CREATE TABLE IF NOT EXISTS ClientStatus (
+                        ClientStatusID INT AUTO_INCREMENT PRIMARY KEY,
+                        StatusName VARCHAR(50) NOT NULL UNIQUE
+                    )";
+                    $mysqli->query($createClientStatusTable);
+
+                    // Создание таблицы Client, если она не существует
+                    $createClientTable = "
+                    CREATE TABLE IF NOT EXISTS Client (
+                        ClientNumber INT AUTO_INCREMENT PRIMARY KEY,
+                        Phone VARCHAR(20) NOT NULL UNIQUE,
+                        Address VARCHAR(100),
+                        CardNumber VARCHAR(20) UNIQUE,
+                        Name VARCHAR(50) NOT NULL,
+                        Surname VARCHAR(50) NOT NULL,
+                        Patronymic VARCHAR(50),
+                        BankNumber INT,
+                        ClientStatusID INT,
+                        FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber) ON DELETE CASCADE,
+                        FOREIGN KEY (ClientStatusID) REFERENCES ClientStatus(ClientStatusID) ON DELETE SET NULL
+                    )";
+                    $mysqli->query($createClientTable);
+
+                    // Функция для получения списка клиентов
+                    function getClients($mysqli) {
+                        return $mysqli->query("SELECT * FROM Client");
+                    }
+
+                    // Функция для получения списка банков
+                    function getBanks($mysqli) {
+                        return $mysqli->query("SELECT * FROM Bank");
+                    }
+
+                    // Обработка добавления клиента
+                    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_client'])) {
+                        $bankNumber = $_POST['bankNumber'];
+                        $phone = $_POST['phone'];
+                        $address = $_POST['address'];
+                        $cardNumber = $_POST['cardNumber'];
+                        $name = $_POST['name'];
+                        $surname = $_POST['surname'];
+                        $patronymic = $_POST['patronymic'];
+
+                        // Проверка формата телефона
+                        if (!preg_match('/^\+?[0-9]{10,15}$/', $phone)) {
+                            echo "<div class='alert alert-danger'>Ошибка: Неверный формат телефона.</div>";
+                            return;
+                        }
+
+                        // Проверка формата номера карты
+                        if (!preg_match('/^[0-9]{16}$/', $cardNumber)) {
+                            echo "<div class='alert alert-danger'>Ошибка: Неверный формат номера карты.</div>";
+                            return;
+                        }
+
+                        // Проверка существования банка
+                        $stmt = $mysqli->prepare("SELECT BankNumber FROM Bank WHERE BankNumber = ?");
+                        $stmt->bind_param("i", $bankNumber);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        if ($result->num_rows > 0) {
+                            // Банк существует, добавляем клиента
+                            $stmt = $mysqli->prepare("INSERT INTO Client (Phone, Address, CardNumber, Name, Surname, Patronymic, BankNumber) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->bind_param("ssssssi", $phone, $address, $cardNumber, $name, $surname, $patronymic, $bankNumber);
+                            
+                            if ($stmt->execute()) {
+                                echo "<div class='alert alert-success'>Клиент успешно добавлен.</div>";
+                            } else {
+                                echo "<div class='alert alert-danger'>Ошибка при добавлении клиента: " . $stmt->error . "</div>";
+                            }
+                        } else {
+                            echo "<div class='alert alert-danger'>Ошибка: указанный банк не существует.</div>";
+                        }
+
+                        $stmt->close();
+                    }
+
+                    // Получение списка клиентов
+                    $clients = getClients($mysqli);
+
+                    // Получение списка банков для выпадающего списка
+                    $banks = getBanks($mysqli);
+
+                    // Проверка, нужно ли редактировать клиента
+                    $editClient = null;
+                    if (isset($_GET['edit'])) {
+                        $clientNumber = $_GET['edit'];
+                        $stmt = $mysqli->prepare("SELECT * FROM Client WHERE ClientNumber = ?");
+                        $stmt->bind_param("i", $clientNumber);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $editClient = $result->fetch_assoc();
+                    }
+                    ?>
+
                     <!-- HTML форма для добавления или редактирования клиента -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5>Добавить клиента</h5>
+                            <h5><?php echo $editClient ? 'Редактировать клиента' : 'Добавить клиента'; ?></h5>
                         </div>
                         <div class="card-body">
                             <form method="POST" action="">
-                                <input type="hidden" name="clientNumber" value="">
+                                <input type="hidden" name="clientNumber" value="<?php echo $editClient['ClientNumber'] ?? ''; ?>">
                                 <div class="mb-3">
-                                    <label for="bankNumber" class="form-label">Номер банка:</label>
-                                    <input type="number" class="form-control" name="bankNumber" value="" required>
+                                    <label for="bankNumber" class="form-label">Выберите банк:</label>
+                                    <select class="form-control" name="bankNumber" required>
+                                        <option value="">Выберите банк</option>
+                                        <?php while ($bank = $banks->fetch_assoc()): ?>
+                                            <option value="<?php echo $bank['BankNumber']; ?>" <?php echo (isset($editClient) && $editClient['BankNumber'] == $bank['BankNumber']) ? 'selected' : ''; ?>>
+                                                <?php echo $bank['BankName']; ?>
+                                            </option>
+                                        <?php endwhile; ?>
+                                    </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Телефон:</label>
-                                    <input type="text" class="form-control" name="phone" value="" required>
+                                    <input type="text" class="form-control" name="phone" value="<?php echo $editClient['Phone'] ?? ''; ?>" required pattern="^\+?[0-9]{10,15}$" title="Неверный формат телефона">
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="address" class="form-label">Адрес:</label>
-                                    <input type="text" class="form-control" name="address" value="">
+                                    <input type="text" class="form-control" name="address" value="<?php echo $editClient['Address'] ?? ''; ?>">
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="cardNumber" class="form-label">Номер карты:</label>
-                                    <input type="text" class="form-control" name="cardNumber" value="" required>
+                                    <input type="text" class="form-control" name="cardNumber" value="<?php echo $editClient['CardNumber'] ?? ''; ?>" required pattern="^[0-9]{16}$" title="Неверный формат номера карты">
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="name" class="form-label">Имя:</label>
-                                    <input type="text" class="form-control" name="name" value="" required>
+                                    <input type="text" class="form-control" name="name" value="<?php echo $editClient['Name'] ?? ''; ?>" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="surname" class="form-label">Фамилия:</label>
-                                    <input type="text" class="form-control" name="surname" value="" required>
+                                    <input type="text" class="form-control" name="surname" value="<?php echo $editClient['Surname'] ?? ''; ?>" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="patronymic" class="form-label">Отчество:</label>
-                                    <input type="text" class="form-control" name="patronymic" value="">
+                                    <input type="text" class="form-control" name="patronymic" value="<?php echo $editClient['Patronymic'] ?? ''; ?>">
                                 </div>
 
-                                <button type="submit" name="add_client" class="btn btn-primary">
-                                    Добавить клиента                                </button>
+                                <button type="submit" name="<?php echo $editClient ? 'edit_client' : 'add_client'; ?>" class="btn btn-primary">
+                                    <?php echo $editClient ? 'Сохранить изменения' : 'Добавить клиента'; ?>
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -128,49 +256,23 @@
                             </tr>
                         </thead>
                         <tbody>
-                                                        <tr>
-                                <td>2</td>
-                                <td>89524563</td>
-                                <td>сыктывкар</td>
-                                <td>22005324</td>
-                                <td>Иванов</td>
-                                <td>Иван</td>
-                                <td>Иванович</td>
-                                <td>2</td>
+                            <?php while ($client = $clients->fetch_assoc()): ?>
+                            <tr>
+                                <td><?php echo $client['ClientNumber']; ?></td>
+                                <td><?php echo $client['Phone']; ?></td>
+                                <td><?php echo $client['Address']; ?></td>
+                                <td><?php echo $client['CardNumber']; ?></td>
+                                <td><?php echo $client['Name']; ?></td>
+                                <td><?php echo $client['Surname']; ?></td>
+                                <td><?php echo $client['Patronymic']; ?></td>
+                                <td><?php echo $client['BankNumber']; ?></td>
                                 <td>
-                                    <a href="?edit=2" class="btn btn-warning btn-sm">Редактировать</a>
-                                    <a href="?delete=2" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
+                                    <a href="?edit=<?php echo $client['ClientNumber']; ?>" class="btn btn-warning btn-sm">Редактировать</a>
+                                    <a href="?delete=<?php echo $client['ClientNumber']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
                                 </td>
                             </tr>
-                                                        <tr>
-                                <td>3</td>
-                                <td>14141</td>
-                                <td>71474</td>
-                                <td>741747</td>
-                                <td>1747</td>
-                                <td>17417</td>
-                                <td>747</td>
-                                <td>2</td>
-                                <td>
-                                    <a href="?edit=3" class="btn btn-warning btn-sm">Редактировать</a>
-                                    <a href="?delete=3" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
-                                </td>
-                            </tr>
-                                                        <tr>
-                                <td>5</td>
-                                <td>фф</td>
-                                <td>ффф</td>
-                                <td>ффф</td>
-                                <td>фф</td>
-                                <td>фф</td>
-                                <td>фф</td>
-                                <td>2</td>
-                                <td>
-                                    <a href="?edit=5" class="btn btn-warning btn-sm">Редактировать</a>
-                                    <a href="?delete=5" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить этого клиента?');">Удалить</a>
-                                </td>
-                            </tr>
-                                                    </tbody>
+                            <?php endwhile; ?>
+                        </tbody>
                     </table>
                 </div>
             </main>
@@ -195,3 +297,7 @@
 </body>
 </html>
 
+<?php
+// Закрытие соединения
+$mysqli->close();
+?>
