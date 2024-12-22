@@ -31,6 +31,14 @@ CREATE TABLE Terminal (
     FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber)  -- Внешний ключ на таблицу Bank
 );
 
+
+CREATE TABLE Terminal (
+TerminalNumber INT AUTO_INCREMENT PRIMARY KEY, -- Уникальный идентификатор терминала
+TerminalName VARCHAR(255) NOT NULL, -- Название терминала
+BankNumber INT, -- Идентификатор банка
+FOREIGN KEY (BankNumber) REFERENCES Bank(BankNumber) ON DELETE SET NULL -- Внешний ключ, с установкой NULL при удалении банка
+);
+
 -- Создание таблицы TransactionStatus
 CREATE TABLE TransactionStatus (
     TransactionStatusID INT AUTO_INCREMENT PRIMARY KEY,  -- Уникальный идентификатор статуса транзакции
